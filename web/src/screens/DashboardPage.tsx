@@ -44,14 +44,14 @@ export function DashboardPage() {
   return (
     <div className="container">
       <div className="card" style={{ background: '#212121', marginBottom: 16 }}>
-        <div className="spread">
-          <div className="row">
-            <div style={{ width: 10, height: 10, borderRadius: 999, background: '#00D4AA' }} />
+        <div className="spread" style={{ gap: 12, flexWrap: 'wrap' }}>
+          <div className="row" style={{ gap: 10 }}>
+            <div style={{ width: 10, height: 10, borderRadius: 999, background: '#00D4AA', flex: '0 0 auto' }} />
             <div className="mono small" style={{ fontWeight: 800, letterSpacing: 0.4 }}>
               AGENT_CONTROL_CENTER // runtime_overview
             </div>
           </div>
-          <div className="row">
+          <div className="row" style={{ gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
             <button className="btn btnPrimary" disabled={busy !== null} onClick={() => void newTask()}>
               {busy === 'new_task' ? (
                 <span className="row" style={{ gap: 8 }}>
@@ -70,7 +70,7 @@ export function DashboardPage() {
             </button>
           </div>
         </div>
-        {err ? <div style={{ marginTop: 10, color: '#ff6b35' }}>{err}</div> : null}
+        {err ? <div style={{ marginTop: 10, color: '#ff6b35' }} className="small">{err}</div> : null}
       </div>
 
       <div className="spread" style={{ marginBottom: 12 }}>
