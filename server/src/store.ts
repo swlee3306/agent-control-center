@@ -170,3 +170,24 @@ export function pushTimeline(id: string, msg: string, level: 'ok' | 'warn' | 'ne
   d.timeline = d.timeline.slice(0, 200);
   scheduleSave();
 }
+
+export function setTaskState(id: string, patch: Partial<Pick<Task, 'stage' | 'status' | 'summary' | 'agent' | 'eta'>> & Partial<Pick<TaskDetail, 'summary' | 'status'>>) {
+  const t = state.tasks[id];
+  const d = state.details[id];
+  if (!t || !d) throw new Error('not found');
+
+  if (patch.stage) t.stage = patch.stage;
+  if (patch.status) {
+    t.status = patch.status;
+    d.status = patch.status;
+  }
+  if (typeof patch.eta === 'string') t.eta = patch.eta;
+  if (typeof patch.summary === 'string') {
+    t.summary = patch.summary;
+    d.summary = patch.summary;
+  }
+  if (typeof patch.agent === 'string') t.agent = patch.agent;
+
+  d.updatedAtUtc = now();
+  scheduleSave();
+}
