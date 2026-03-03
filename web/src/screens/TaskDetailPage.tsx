@@ -1,5 +1,5 @@
 import React from 'react';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import {
   apiGet,
   apiPost,
@@ -16,11 +16,41 @@ function statusBadge(status: Status) {
   return 'badge badgeWarn';
 }
 
+function escapeRegExp(s: string) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function HighlightedLines({ text, q }: { text: string; q: string }) {
+  if (!q.trim()) return <>{text || '(waiting for tmux log...)'}</>;
+  const re = new RegExp(escapeRegExp(q), 'gi');
+  const lines = (text || '').split('\n');
+  return (
+    <>
+      {lines.map((line, i) => {
+        const parts: Array<string> = line.split(re);
+        const matches = line.match(re) ?? [];
+        return (
+          <React.Fragment key={i}>
+            {parts.map((p, j) => (
+              <React.Fragment key={j}>
+                {p}
+                {j < matches.length ? <span className="mark">{matches[j]}</span> : null}
+              </React.Fragment>
+            ))}
+            {i < lines.length - 1 ? '\n' : null}
+          </React.Fragment>
+        );
+      })}
+    </>
+  );
+}
+
 function RoleLog({ role }: { role: AgentRole }) {
   const [text, setText] = React.useState<string>('');
   const [q, setQ] = React.useState<string>('');
   const [autoScroll, setAutoScroll] = React.useState<boolean>(true);
   const [updatedAt, setUpdatedAt] = React.useState<string>('');
+  const [expanded, setExpanded] = React.useState<boolean>(false);
   const termRef = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
@@ -88,6 +118,9 @@ function RoleLog({ role }: { role: AgentRole }) {
           <button className="btn" style={{ borderColor: '#3F3F46', color: '#a1a1aa' }} onClick={() => void copy()}>
             copy
           </button>
+          <button className="btn" style={{ borderColor: '#3F3F46', color: '#a1a1aa' }} onClick={() => setExpanded(true)}>
+            expand
+          </button>
         </div>
       </div>
 
@@ -116,9 +149,56 @@ function RoleLog({ role }: { role: AgentRole }) {
 
       <div ref={termRef} className="term" style={{ marginTop: 8, height: 160 }}>
         <div className="termLine" style={{ color: '#a1a1aa' }}>
-          {filtered || '(waiting for tmux log...)'}
+          <HighlightedLines text={filtered} q={q} />
         </div>
       </div>
+
+      {expanded ? (
+        <div className="modalOverlay" onClick={() => setExpanded(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="spread">
+              <div className="mono" style={{ fontWeight: 900 }}>
+                {role} // log (expanded)
+              </div>
+              <button className="btn btnOutlineWarn" onClick={() => setExpanded(false)}>
+                close
+              </button>
+            </div>
+
+            <div className="row" style={{ marginTop: 10 }}>
+              <input
+                className="mono"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="search in log…"
+                style={{
+                  flex: 1,
+                  background: '#232529',
+                  border: '1px solid #3F3F46',
+                  borderRadius: 6,
+                  color: '#f4f4f5',
+                  padding: '8px 10px',
+                  outline: 'none',
+                }}
+              />
+              {q ? (
+                <button className="btn" style={{ borderColor: '#3F3F46', color: '#a1a1aa' }} onClick={() => setQ('')}>
+                  clear
+                </button>
+              ) : null}
+              <button className="btn" style={{ borderColor: '#3F3F46', color: '#a1a1aa' }} onClick={() => void copy()}>
+                copy
+              </button>
+            </div>
+
+            <div className="term" style={{ marginTop: 10, height: '70vh' as const }}>
+              <div className="termLine" style={{ color: '#a1a1aa' }}>
+                <HighlightedLines text={filtered} q={q} />
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -183,7 +263,16 @@ export function TaskDetailPage() {
     <div className="container" style={{ maxWidth: 1440 }}>
       <div className="card" style={{ background: '#1E2026', borderRadius: 6, border: '1px solid #2A2B30' }}>
         <div className="spread" style={{ gap: 12 }}>
-          <div style={{ fontSize: 26, fontWeight: 900 }}>TASK_DETAIL // AGENT_CONTROL_CENTER</div>
+          <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+            <div style={{ fontSize: 26, fontWeight: 900 }}>TASK_DETAIL // AGENT_CONTROL_CENTER</div>
+            <Link
+              className="btn"
+              style={{ borderColor: '#3F3F46', color: '#a1a1aa', background: 'transparent' }}
+              to="/"
+            >
+              Back
+            </Link>
+          </div>
           <button
             className="btn"
             style={{ borderColor: '#22c55e', color: '#22c55e', background: 'transparent' }}

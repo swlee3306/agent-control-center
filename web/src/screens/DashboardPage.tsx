@@ -40,6 +40,9 @@ export function DashboardPage() {
             <button className="btn btnPrimary" onClick={() => void newTask()}>
               new_task
             </button>
+            <Link className="btn" style={{ borderColor: '#22c55e', color: '#22c55e', background: 'transparent' }} to="/help">
+              help
+            </Link>
             <button className="btn" onClick={() => void refresh()}>
               refresh_log
             </button>
