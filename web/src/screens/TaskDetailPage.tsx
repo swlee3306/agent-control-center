@@ -130,7 +130,7 @@ function RoleLog({ role }: { role: AgentRole }) {
 
   return (
     <div style={{ marginTop: 10 }}>
-      <div className="row mono" style={{ gap: 8, justifyContent: 'space-between', color: '#71717A', fontSize: 11 }}>
+      <div className="row mono" style={{ gap: 8, justifyContent: 'space-between', color: '#71717A', fontSize: 11, flexWrap: 'wrap' }}>
         <div className="row mono" style={{ gap: 8, flexWrap: 'wrap' }}>
           <span>log</span>
           <span style={{ color: '#52525b' }}>|</span>
@@ -144,16 +144,16 @@ function RoleLog({ role }: { role: AgentRole }) {
             <input type="checkbox" checked={caseSensitive} onChange={(e) => setCaseSensitive(e.target.checked)} />
             Aa
           </label>
-        </div>
-        <div className="row" style={{ gap: 8 }}>
           <label className="row mono" style={{ gap: 6, cursor: 'pointer' }}>
             <input type="checkbox" checked={autoScroll} onChange={(e) => setAutoScroll(e.target.checked)} />
-            auto-scroll
+            auto
           </label>
-          <button className="btn" style={{ borderColor: '#3F3F46', color: '#a1a1aa' }} onClick={() => void copy()}>
+        </div>
+        <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+          <button className="btn btnOutline" style={{ padding: '8px 10px' }} onClick={() => void copy()}>
             copy
           </button>
-          <button className="btn" style={{ borderColor: '#3F3F46', color: '#a1a1aa' }} onClick={() => setExpanded(true)}>
+          <button className="btn btnOutline" style={{ padding: '8px 10px' }} onClick={() => setExpanded(true)}>
             expand
           </button>
         </div>
