@@ -209,6 +209,7 @@ export function TaskDetailPage() {
   const [cmd, setCmd] = React.useState('');
   const [err, setErr] = React.useState<string | null>(null);
   const [toast, setToast] = React.useState<{ kind: 'ok' | 'warn'; msg: string } | null>(null);
+  const [busy, setBusy] = React.useState<string | null>(null);
 
   async function refresh() {
     if (!taskId) return;
@@ -236,18 +237,30 @@ export function TaskDetailPage() {
 
   async function runStage(stage: string) {
     if (!taskId) return;
-    try {
-      await apiPost(`/api/tasks/${encodeURIComponent(taskId)}/stage`, { stage });
-      showToast('ok', `Stage sent: ${stage}`);
-      await refresh();
-    } catch (e) {
-      showToast('warn', String((e as Error).message || e));
-    }
+    await runBusy(`stage:${stage}`, async () => {
+      try {
+        await apiPost(`/api/tasks/${encodeURIComponent(taskId)}/stage`, { stage });
+        showToast('ok', `Stage sent: ${stage}`);
+        await refresh();
+      } catch (e) {
+        showToast('warn', String((e as Error).message || e));
+      }
+    });
   }
 
   function showToast(kind: 'ok' | 'warn', msg: string) {
     setToast({ kind, msg });
     window.setTimeout(() => setToast(null), 2500);
+  }
+
+  async function runBusy(key: string, fn: () => Promise<void>) {
+    if (busy) return;
+    setBusy(key);
+    try {
+      await fn();
+    } finally {
+      setBusy(null);
+    }
   }
 
   async function syncPaneTitles() {
@@ -415,10 +428,18 @@ export function TaskDetailPage() {
                   <button
                     key={stage}
                     className="btn"
+                    disabled={busy !== null}
                     style={{ borderColor: '#22c55e', color: '#22c55e', background: 'transparent' }}
                     onClick={() => void runStage(stage)}
                   >
-                    {label}
+                    {busy === `stage:${stage}` ? (
+                      <span className="row" style={{ gap: 8 }}>
+                        <span className="spinner" />
+                        …
+                      </span>
+                    ) : (
+                      label
+                    )}
                   </button>
                 ))}
               </div>
@@ -426,8 +447,9 @@ export function TaskDetailPage() {
               <div className="row" style={{ marginTop: 10, flexWrap: 'wrap' }}>
                 <button
                   className="btn btnPrimary"
+                  disabled={busy !== null}
                   onClick={() =>
-                    void (async () => {
+                    void runBusy('orch:start:manual', async () => {
                       try {
                         await apiPost(`/api/tasks/${encodeURIComponent(taskId ?? '')}/orchestrate/start`, {
                           mode: 'manual-approve',
@@ -437,17 +459,25 @@ export function TaskDetailPage() {
                       } catch (e) {
                         showToast('warn', String((e as Error).message || e));
                       }
-                    })()
+                    })
                   }
                 >
-                  Start Orchestrator (manual)
+                  {busy === 'orch:start:manual' ? (
+                    <span className="row" style={{ gap: 8 }}>
+                      <span className="spinner" />
+                      starting…
+                    </span>
+                  ) : (
+                    'Start Orchestrator (manual)'
+                  )}
                 </button>
 
                 <button
                   className="btn"
                   style={{ borderColor: '#22c55e', color: '#22c55e' }}
+                  disabled={busy !== null}
                   onClick={() =>
-                    void (async () => {
+                    void runBusy('orch:start:auto', async () => {
                       try {
                         await apiPost(`/api/tasks/${encodeURIComponent(taskId ?? '')}/orchestrate/start`, {
                           mode: 'auto-detect',
@@ -457,17 +487,25 @@ export function TaskDetailPage() {
                       } catch (e) {
                         showToast('warn', String((e as Error).message || e));
                       }
-                    })()
+                    })
                   }
                 >
-                  Start Orchestrator (auto)
+                  {busy === 'orch:start:auto' ? (
+                    <span className="row" style={{ gap: 8 }}>
+                      <span className="spinner" />
+                      starting…
+                    </span>
+                  ) : (
+                    'Start Orchestrator (auto)'
+                  )}
                 </button>
 
                 <button
                   className="btn"
                   style={{ borderColor: '#22c55e', color: '#22c55e' }}
+                  disabled={busy !== null}
                   onClick={() =>
-                    void (async () => {
+                    void runBusy('orch:approve', async () => {
                       try {
                         await apiPost(`/api/tasks/${encodeURIComponent(taskId ?? '')}/orchestrate/approve-next`, {});
                         showToast('ok', 'Approved next stage');
@@ -475,15 +513,23 @@ export function TaskDetailPage() {
                       } catch (e) {
                         showToast('warn', String((e as Error).message || e));
                       }
-                    })()
+                    })
                   }
                 >
-                  Approve Next
+                  {busy === 'orch:approve' ? (
+                    <span className="row" style={{ gap: 8 }}>
+                      <span className="spinner" />
+                      …
+                    </span>
+                  ) : (
+                    'Approve Next'
+                  )}
                 </button>
                 <button
                   className="btn btnOutlineWarn"
+                  disabled={busy !== null}
                   onClick={() =>
-                    void (async () => {
+                    void runBusy('orch:stop', async () => {
                       try {
                         await apiPost(`/api/tasks/${encodeURIComponent(taskId ?? '')}/orchestrate/stop`, {});
                         showToast('warn', 'Orchestrator stopped');
@@ -491,10 +537,17 @@ export function TaskDetailPage() {
                       } catch (e) {
                         showToast('warn', String((e as Error).message || e));
                       }
-                    })()
+                    })
                   }
                 >
-                  Stop Orchestrator
+                  {busy === 'orch:stop' ? (
+                    <span className="row" style={{ gap: 8 }}>
+                      <span className="spinner" />
+                      …
+                    </span>
+                  ) : (
+                    'Stop Orchestrator'
+                  )}
                 </button>
               </div>
             </div>
