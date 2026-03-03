@@ -266,7 +266,7 @@ export function TaskDetailPage() {
                         await apiPost(`/api/tasks/${encodeURIComponent(taskId ?? '')}/orchestrate/start`, {
                           mode: 'manual-approve',
                         });
-                        showToast('ok', 'Orchestrator started');
+                        showToast('ok', 'Orchestrator started (manual)');
                         await refresh();
                       } catch (e) {
                         showToast('warn', String((e as Error).message || e));
@@ -276,6 +276,27 @@ export function TaskDetailPage() {
                 >
                   Start Orchestrator (manual)
                 </button>
+
+                <button
+                  className="btn"
+                  style={{ borderColor: '#22c55e', color: '#22c55e' }}
+                  onClick={() =>
+                    void (async () => {
+                      try {
+                        await apiPost(`/api/tasks/${encodeURIComponent(taskId ?? '')}/orchestrate/start`, {
+                          mode: 'auto-detect',
+                        });
+                        showToast('ok', 'Orchestrator started (auto-detect)');
+                        await refresh();
+                      } catch (e) {
+                        showToast('warn', String((e as Error).message || e));
+                      }
+                    })()
+                  }
+                >
+                  Start Orchestrator (auto)
+                </button>
+
                 <button
                   className="btn"
                   style={{ borderColor: '#22c55e', color: '#22c55e' }}

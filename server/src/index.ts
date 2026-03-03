@@ -5,7 +5,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import { listTasks, getTaskDetail, pushTimeline, createTask, setTaskState } from './store.js';
+import { listTasks, getTaskDetail, pushTimeline, createTask, setTaskState, deleteTask } from './store.js';
 import {
   tmuxCapture,
   tmuxListPanes,
@@ -77,6 +77,27 @@ app.post('/api/tasks', (req, res) => {
     res.json(task);
   } catch (e) {
     res.status(400).json({ error: (e as Error).message });
+  }
+});
+
+app.delete('/api/tasks/:id', (req, res) => {
+  try {
+    deleteTask(req.params.id);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(404).json({ error: (e as Error).message });
+  }
+});
+
+app.post('/api/tasks/:id/terminate', (req, res) => {
+  // Soft-terminate: stop orchestrator (if any) and mark task terminated.
+  try {
+    orchStop(req.params.id, 'terminate');
+    setTaskState(req.params.id, { status: 'terminated' });
+    pushTimeline(req.params.id, 'task> terminated', 'warn');
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(404).json({ error: (e as Error).message });
   }
 });
 
