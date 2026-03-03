@@ -82,10 +82,19 @@ export function TaskDetailPage() {
     await refresh();
   }
 
+  async function syncPaneTitles() {
+    await apiPost('/api/tmux/sync-titles', {});
+  }
+
   return (
     <div className="container" style={{ maxWidth: 1440 }}>
       <div className="card" style={{ background: '#1E2026', borderRadius: 6, border: '1px solid #2A2B30' }}>
-        <div style={{ fontSize: 26, fontWeight: 900 }}>TASK_DETAIL // AGENT_CONTROL_CENTER</div>
+        <div className="spread" style={{ gap: 12 }}>
+          <div style={{ fontSize: 26, fontWeight: 900 }}>TASK_DETAIL // AGENT_CONTROL_CENTER</div>
+          <button className="btn" style={{ borderColor: '#22c55e', color: '#22c55e', background: 'transparent' }} onClick={() => void syncPaneTitles()}>
+            Sync pane titles
+          </button>
+        </div>
         <div className="row mono" style={{ marginTop: 10, color: '#71717A', fontSize: 12 }}>
           <span className={statusBadge(detail?.status ?? 'idle')}>
             STATUS: {(detail?.status ?? 'idle').toUpperCase()}

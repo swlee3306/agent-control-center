@@ -12,6 +12,7 @@ import {
   tmuxPaneCurrentCommand,
   tmuxResolvePaneIndexByTitle,
   tmuxSend,
+  tmuxSetPaneTitle,
   type TmuxTarget,
 } from './tmux.js';
 
@@ -184,13 +185,28 @@ app.post('/api/tasks/:id/stage', async (req, res) => {
 });
 
 app.get('/api/tmux/:role/log', async (req, res) => {
-  const pane = roleToPane[req.params.role];
-  if (pane === undefined) return res.status(404).json({ error: 'unknown role' });
+  const role = req.params.role;
+  if (!(role in roleToPane)) return res.status(404).json({ error: 'unknown role' });
   const lines = Math.max(20, Math.min(2000, Number(req.query.lines ?? 200)));
 
   try {
+    const pane = await resolveRolePaneIndex(role);
     const text = await tmuxCapture(tmuxTarget, pane, lines);
-    res.json({ role: req.params.role, text });
+    res.json({ role, text });
+  } catch (e) {
+    res.status(500).json({ error: (e as Error).message });
+  }
+});
+
+app.post('/api/tmux/sync-titles', async (_req, res) => {
+  // Force pane titles to match role names.
+  // Uses canonical pane indices 0..3 so title mapping becomes stable again.
+  try {
+    await tmuxSetPaneTitle(tmuxTarget, 0, 'architect');
+    await tmuxSetPaneTitle(tmuxTarget, 1, 'executor');
+    await tmuxSetPaneTitle(tmuxTarget, 2, 'qa');
+    await tmuxSetPaneTitle(tmuxTarget, 3, 'reviewer');
+    res.json({ ok: true });
   } catch (e) {
     res.status(500).json({ error: (e as Error).message });
   }
