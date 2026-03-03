@@ -47,7 +47,7 @@ export function DashboardPage() {
         <div className="spread">
           <div className="row">
             <div style={{ width: 10, height: 10, borderRadius: 999, background: '#00D4AA' }} />
-            <div style={{ fontWeight: 800, letterSpacing: 0.4 }}>
+            <div className="mono small" style={{ fontWeight: 800, letterSpacing: 0.4 }}>
               AGENT_CONTROL_CENTER // runtime_overview
             </div>
           </div>
@@ -74,8 +74,8 @@ export function DashboardPage() {
       </div>
 
       <div className="spread" style={{ marginBottom: 12 }}>
-        <div style={{ fontSize: 18, fontWeight: 800 }}>// task_queue [high_density]</div>
-        <div className="row mono" style={{ color: '#777', fontSize: 11 }}>
+        <div className="h2">// task_queue [high_density]</div>
+        <div className="row mono xs" style={{ color: '#777' }}>
           <span className="badge badgeOk">● success</span>
           <span className="badge badgeWarn">● failure</span>
         </div>
