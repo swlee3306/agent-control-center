@@ -3,6 +3,7 @@ import { WebSocketServer } from 'ws';
 import http from 'node:http';
 import path from 'node:path';
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { listTasks, getTaskDetail, pushTimeline } from './store.js';
 import { tmuxCapture, tmuxSend, type TmuxTarget } from './tmux.js';
@@ -74,6 +75,68 @@ app.post('/api/tasks/:id/command', async (req, res) => {
   }
 });
 
+type Stage = 'Plan' | 'Exec' | 'Verify' | 'Review' | 'Fix Loop';
+
+const stageTemplates: Record<Stage, { role: keyof typeof roleToPane; text: string }> = {
+  Plan: {
+    role: 'architect',
+    text: [
+      'You are ARCHITECT. Produce a concise plan for the current task.',
+      'Output format:',
+      '- TL;DR (3 bullets)',
+      '- Design (components/data/API)',
+      '- Task breakdown (<=10)',
+      '- DoD (commands to verify)',
+      '- Risks/rollback',
+    ].join('\n'),
+  },
+  Exec: {
+    role: 'executor',
+    text: [
+      'You are EXECUTOR. Implement the plan. Keep changes minimal and reversible.',
+      'Rules: if unsure, ask. Provide file paths and short status updates.',
+    ].join('\n'),
+  },
+  Verify: {
+    role: 'qa',
+    text: [
+      'You are QA. Verify the implementation.',
+      'Run tests/lint if available. Output only PASS/FAIL with minimal evidence.',
+    ].join('\n'),
+  },
+  Review: {
+    role: 'reviewer',
+    text: [
+      'You are REVIEWER. Review for security/performance/ops risks.',
+      'Output: decision (approve/hold) + top issues + quick wins.',
+    ].join('\n'),
+  },
+  'Fix Loop': {
+    role: 'executor',
+    text: [
+      'You are EXECUTOR in FIX LOOP mode.',
+      'Take the latest QA/Review failures, apply minimal fixes, and request re-verify.',
+    ].join('\n'),
+  },
+};
+
+app.post('/api/tasks/:id/stage', async (req, res) => {
+  const stage = (req.body as { stage?: Stage }).stage;
+  if (!stage || !(stage in stageTemplates)) return res.status(400).json({ error: 'invalid stage' });
+
+  const tpl = stageTemplates[stage];
+  const targetPane = roleToPane[tpl.role];
+  pushTimeline(req.params.id, `stage>${stage} -> @${tpl.role}`, 'neutral');
+
+  try {
+    await tmuxSend(tmuxTarget, targetPane, tpl.text);
+    res.json({ ok: true });
+  } catch (e) {
+    pushTimeline(req.params.id, `stage_failed: ${(e as Error).message}`, 'warn');
+    res.status(500).json({ error: 'stage failed' });
+  }
+});
+
 app.get('/api/tmux/:role/log', async (req, res) => {
   const pane = roleToPane[req.params.role];
   if (pane === undefined) return res.status(404).json({ error: 'unknown role' });
@@ -96,12 +159,65 @@ app.get(/^\/(?!api\/).*/, (_req, res) => {
 
 const server = http.createServer(app);
 
-// WS for future streaming. For now, echo.
+// WS streaming: broadcast tmux logs per role
 const wss = new WebSocketServer({ server, path: '/ws' });
+
+type WsMsg =
+  | { type: 'hello'; ok: true }
+  | { type: 'role_log'; role: string; text: string }
+  | { type: 'error'; message: string };
+
+function wsBroadcast(msg: WsMsg) {
+  const payload = JSON.stringify(msg);
+  for (const client of wss.clients) {
+    if (client.readyState === 1) client.send(payload);
+  }
+}
+
+const lastHashByRole: Record<string, string> = {};
+let pollTimer: NodeJS.Timeout | null = null;
+
+async function pollTmuxAndBroadcast() {
+  for (const role of Object.keys(roleToPane)) {
+    const pane = roleToPane[role];
+    try {
+      const text = await tmuxCapture(tmuxTarget, pane, 220);
+      const h = crypto.createHash('sha1').update(text).digest('hex');
+      if (lastHashByRole[role] !== h) {
+        lastHashByRole[role] = h;
+        wsBroadcast({ type: 'role_log', role, text });
+      }
+    } catch (e) {
+      wsBroadcast({ type: 'error', message: `tmux_capture_failed(${role}): ${(e as Error).message}` });
+    }
+  }
+}
+
+function ensurePolling() {
+  if (pollTimer) return;
+  pollTimer = setInterval(() => {
+    void pollTmuxAndBroadcast();
+  }, 1200);
+}
+
 wss.on('connection', (ws) => {
   ws.send(JSON.stringify({ type: 'hello', ok: true }));
+  ensurePolling();
+
+  // On connect: send immediate snapshot
+  void (async () => {
+    for (const role of Object.keys(roleToPane)) {
+      try {
+        const text = await tmuxCapture(tmuxTarget, roleToPane[role], 220);
+        ws.send(JSON.stringify({ type: 'role_log', role, text }));
+      } catch {
+        // ignore
+      }
+    }
+  })();
+
   ws.on('message', () => {
-    ws.send(JSON.stringify({ type: 'pong' }));
+    // ignore (reserved)
   });
 });
 
