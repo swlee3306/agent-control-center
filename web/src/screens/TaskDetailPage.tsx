@@ -16,6 +16,36 @@ function statusBadge(status: Status) {
   return 'badge badgeWarn';
 }
 
+function RoleLog({ role }: { role: AgentRole }) {
+  const [text, setText] = React.useState<string>('');
+
+  React.useEffect(() => {
+    const wsUrl = `${location.origin}${import.meta.env.BASE_URL.replace(/\/$/, '')}/ws`;
+    const ws = new WebSocket(wsUrl);
+
+    ws.addEventListener('message', (ev) => {
+      try {
+        const msg = JSON.parse(String(ev.data)) as { type: string; role?: string; text?: string };
+        if (msg.type === 'role_log' && msg.role === role && typeof msg.text === 'string') {
+          setText(msg.text);
+        }
+      } catch {
+        // ignore
+      }
+    });
+
+    return () => ws.close();
+  }, [role]);
+
+  return (
+    <div className="term" style={{ marginTop: 10, height: 160 }}>
+      <div className="termLine" style={{ color: '#a1a1aa' }}>
+        {text || '(waiting for tmux log...)'}
+      </div>
+    </div>
+  );
+}
+
 export function TaskDetailPage() {
   const { taskId } = useParams();
   const [detail, setDetail] = React.useState<TaskDetail | null>(null);
@@ -46,6 +76,12 @@ export function TaskDetailPage() {
     await refresh();
   }
 
+  async function runStage(stage: string) {
+    if (!taskId) return;
+    await apiPost(`/api/tasks/${encodeURIComponent(taskId)}/stage`, { stage });
+    await refresh();
+  }
+
   return (
     <div className="container" style={{ maxWidth: 1440 }}>
       <div className="card" style={{ background: '#1E2026', borderRadius: 6, border: '1px solid #2A2B30' }}>
@@ -69,11 +105,17 @@ export function TaskDetailPage() {
                   key={r}
                   style={{ background: '#1E2026', borderRadius: 6, border: '1px solid #2A2B30', padding: 12 }}
                 >
-                  <div style={{ fontWeight: 900, textTransform: 'lowercase' }}>{r}</div>
+                  <div className="spread">
+                    <div style={{ fontWeight: 900, textTransform: 'lowercase' }}>{r}</div>
+                    <span className={statusBadge(detail.agents[r].status)}>{detail.agents[r].status}</span>
+                  </div>
                   <div className="mono" style={{ color: '#71717A', fontSize: 11, marginTop: 4 }}>
                     ANIMAL: {detail.agents[r].animal}
                   </div>
                   <div style={{ marginTop: 8, fontSize: 13, lineHeight: 1.35 }}>{detail.agents[r].line}</div>
+
+                  {/* live tmux log */}
+                  <RoleLog role={r} />
                 </div>
               ))}
             </div>
@@ -91,7 +133,18 @@ export function TaskDetailPage() {
               </div>
               <div className="term" style={{ marginTop: 8 }}>
                 {detail.timeline.map((e, idx) => (
-                  <div key={idx} className="termLine" style={{ color: e.level === 'ok' ? '#22c55e' : e.level === 'warn' ? '#f59e0b' : '#a1a1aa' }}>
+                  <div
+                    key={idx}
+                    className="termLine"
+                    style={{
+                      color:
+                        e.level === 'ok'
+                          ? '#22c55e'
+                          : e.level === 'warn'
+                            ? '#f59e0b'
+                            : '#a1a1aa',
+                    }}
+                  >
                     [{e.t}] {e.msg}
                   </div>
                 ))}
@@ -132,10 +185,24 @@ export function TaskDetailPage() {
               <div className="mono" style={{ color: '#71717A', fontSize: 11, fontWeight: 800 }}>
                 // STAGE_CONTROLS
               </div>
-              <div className="row mono" style={{ marginTop: 8, gap: 14, color: '#22c55e', fontWeight: 800, fontSize: 12 }}>
-                {['Run Plan', 'Run Exec', 'Run Verify', 'Run Review', 'Run Fix Loop'].map((x) => (
-                  <button key={x} className="btn" style={{ borderColor: '#22c55e', color: '#22c55e', background: 'transparent' }}>
-                    {x}
+              <div
+                className="row mono"
+                style={{ marginTop: 8, gap: 14, color: '#22c55e', fontWeight: 800, fontSize: 12, flexWrap: 'wrap' }}
+              >
+                {([
+                  ['Run Plan', 'Plan'],
+                  ['Run Exec', 'Exec'],
+                  ['Run Verify', 'Verify'],
+                  ['Run Review', 'Review'],
+                  ['Run Fix Loop', 'Fix Loop'],
+                ] as const).map(([label, stage]) => (
+                  <button
+                    key={stage}
+                    className="btn"
+                    style={{ borderColor: '#22c55e', color: '#22c55e', background: 'transparent' }}
+                    onClick={() => void runStage(stage)}
+                  >
+                    {label}
                   </button>
                 ))}
               </div>
