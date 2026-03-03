@@ -62,10 +62,10 @@ export function DashboardPage() {
                 'new_task'
               )}
             </button>
-            <Link className="btn" style={{ borderColor: '#22c55e', color: '#22c55e', background: 'transparent' }} to="/help">
+            <Link className="btn btnOutlineSuccess" to="/help">
               help
             </Link>
-            <button className="btn" disabled={busy !== null} onClick={() => void refresh()}>
+            <button className="btn btnOutline" disabled={busy !== null} onClick={() => void refresh()}>
               refresh_log
             </button>
           </div>
@@ -97,8 +97,8 @@ export function DashboardPage() {
             <div key={t.id} style={{ marginBottom: 10 }}>
               <Link to={`/tasks/${encodeURIComponent(t.id)}`} style={{ textDecoration: 'none' }}>
                 <div className="tableRow mono">
-                  <div className="colId">{t.id}</div>
-                  <div className="colSummary">{t.summary}</div>
+                  <div className="colId" title={t.id}>{t.id}</div>
+                  <div className="colSummary" title={t.summary}>{t.summary}</div>
                   <div className="colAgent">{t.agent}</div>
                   <div className="colStage" style={{ color: t.stage === 'Plan' ? '#00d4aa' : '#fff' }}>
                     {t.stage}
