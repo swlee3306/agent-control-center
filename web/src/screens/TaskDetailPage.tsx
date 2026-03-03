@@ -218,6 +218,18 @@ export function TaskDetailPage() {
                   </button>
                 ))}
               </div>
+
+              <div className="row" style={{ marginTop: 10, flexWrap: 'wrap' }}>
+                <button className="btn btnPrimary" onClick={() => void apiPost(`/api/tasks/${encodeURIComponent(taskId ?? '')}/orchestrate/start`, { mode: 'manual-approve' })}>
+                  Start Orchestrator (manual)
+                </button>
+                <button className="btn" style={{ borderColor: '#22c55e', color: '#22c55e' }} onClick={() => void apiPost(`/api/tasks/${encodeURIComponent(taskId ?? '')}/orchestrate/approve-next`, {})}>
+                  Approve Next
+                </button>
+                <button className="btn btnOutlineWarn" onClick={() => void apiPost(`/api/tasks/${encodeURIComponent(taskId ?? '')}/orchestrate/stop`, {})}>
+                  Stop Orchestrator
+                </button>
+              </div>
             </div>
           </div>
 

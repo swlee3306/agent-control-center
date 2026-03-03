@@ -5,7 +5,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import { listTasks, getTaskDetail, pushTimeline, createTask } from './store.js';
+import { listTasks, getTaskDetail, pushTimeline, createTask, setTaskState } from './store.js';
 import {
   tmuxCapture,
   tmuxListPanes,
@@ -175,11 +175,13 @@ app.post('/api/tasks/:id/stage', async (req, res) => {
   pushTimeline(req.params.id, `stage>${stage} -> @${tpl.role}`, 'neutral');
 
   try {
+    // Mark task as running on stage send
+    setTaskState(req.params.id, { stage, status: 'running' });
+
     // Smart mode:
     // - If codex is already running in the pane, just send the prompt.
     // - Otherwise, start codex --yolo with the prompt so it still works.
     const current = await tmuxPaneCurrentCommand(tmuxTarget, targetPane).catch(() => '');
-    // In our panes, codex often shows as `node` (codex CLI runtime). Treat both as codex.
     const isCodex = current === 'codex' || current === 'node';
 
     if (isCodex) {
@@ -223,6 +225,174 @@ app.post('/api/tmux/sync-titles', async (_req, res) => {
   } catch (e) {
     res.status(500).json({ error: (e as Error).message });
   }
+});
+
+type OrchestratorMode = 'auto-detect' | 'manual-approve';
+
+type OrchestratorState = {
+  taskId: string;
+  mode: OrchestratorMode;
+  seq: Stage[];
+  idx: number;
+  startedAtMs: number;
+  stageStartedAtMs: number;
+  awaitingApproval: boolean;
+  timer?: NodeJS.Timeout;
+};
+
+const orchByTask = new Map<string, OrchestratorState>();
+
+const stageTimeoutMs: Record<Stage, number> = {
+  Plan: 10 * 60 * 1000,
+  Exec: 30 * 60 * 1000,
+  Verify: 15 * 60 * 1000,
+  Review: 10 * 60 * 1000,
+  'Fix Loop': 20 * 60 * 1000,
+};
+
+function stageRole(stage: Stage): keyof typeof roleToPane {
+  if (stage === 'Plan') return 'architect';
+  if (stage === 'Exec') return 'executor';
+  if (stage === 'Verify') return 'qa';
+  return 'reviewer';
+}
+
+function detectCompletion(stage: Stage, logText: string) {
+  const t = logText.toLowerCase();
+  if (stage === 'Verify') {
+    if (/(^|\b)pass(\b|$)/m.test(t)) return { done: true, ok: true };
+    if (/(^|\b)fail(\b|$)/m.test(t)) return { done: true, ok: false };
+  }
+  if (stage === 'Review') {
+    if (/\bapprove\b/.test(t)) return { done: true, ok: true };
+    if (/\bhold\b/.test(t)) return { done: true, ok: false };
+  }
+  // Plan/Exec/Fix Loop: no reliable auto-detect yet
+  return { done: false as const };
+}
+
+async function orchSendStage(taskId: string, stage: Stage) {
+  // reuse stage endpoint logic: send prompt and set running
+  const tpl = stageTemplates[stage];
+  const pane = await resolveRolePaneIndex(tpl.role);
+  const current = await tmuxPaneCurrentCommand(tmuxTarget, pane).catch(() => '');
+  const isCodex = current === 'codex' || current === 'node';
+
+  setTaskState(taskId, { stage, status: 'running' });
+  pushTimeline(taskId, `orch> ${stage} -> @${tpl.role}`, 'neutral');
+
+  if (isCodex) {
+    await tmuxSend(tmuxTarget, pane, tpl.text);
+  } else {
+    const cmd = `codex --yolo ${bashDollarString(tpl.text)}`;
+    await tmuxSend(tmuxTarget, pane, cmd);
+  }
+}
+
+function orchStop(taskId: string, reason?: string) {
+  const orch = orchByTask.get(taskId);
+  if (!orch) return;
+  if (orch.timer) clearInterval(orch.timer);
+  orchByTask.delete(taskId);
+  pushTimeline(taskId, `orch> stopped${reason ? ` (${reason})` : ''}`, 'warn');
+}
+
+async function orchTick(taskId: string) {
+  const orch = orchByTask.get(taskId);
+  if (!orch) return;
+  const stage = orch.seq[orch.idx];
+  if (!stage) return;
+
+  // timeout
+  if (Date.now() - orch.stageStartedAtMs > stageTimeoutMs[stage]) {
+    setTaskState(taskId, { status: 'timeout' });
+    orchStop(taskId, `${stage} timeout`);
+    return;
+  }
+
+  if (orch.mode === 'manual-approve') {
+    if (orch.awaitingApproval) return;
+  }
+
+  if (orch.mode === 'auto-detect') {
+    // only auto-detect for Verify/Review right now
+    const role = stageRole(stage);
+    const pane = await resolveRolePaneIndex(role);
+    const log = await tmuxCapture(tmuxTarget, pane, 120).catch(() => '');
+    const det = detectCompletion(stage, log);
+    if (!det.done) return;
+
+    if (det.ok) {
+      pushTimeline(taskId, `orch> ${stage} detected OK`, 'ok');
+    } else {
+      pushTimeline(taskId, `orch> ${stage} detected FAIL -> Fix Loop`, 'warn');
+      // jump to fix loop
+      orch.idx = orch.seq.indexOf('Fix Loop');
+      orch.stageStartedAtMs = Date.now();
+      await orchSendStage(taskId, 'Fix Loop');
+      orch.awaitingApproval = orch.mode === 'manual-approve';
+      return;
+    }
+  }
+
+  // advance
+  orch.idx += 1;
+  if (orch.idx >= orch.seq.length) {
+    setTaskState(taskId, { status: 'done' });
+    pushTimeline(taskId, 'orch> completed', 'ok');
+    orchStop(taskId);
+    return;
+  }
+
+  const nextStage = orch.seq[orch.idx];
+  orch.stageStartedAtMs = Date.now();
+  orch.awaitingApproval = orch.mode === 'manual-approve';
+  await orchSendStage(taskId, nextStage);
+}
+
+app.post('/api/tasks/:id/orchestrate/start', async (req, res) => {
+  const taskId = req.params.id;
+  const mode = ((req.body as { mode?: OrchestratorMode }).mode ?? 'manual-approve') as OrchestratorMode;
+  if (orchByTask.has(taskId)) return res.status(400).json({ error: 'already running' });
+
+  const orch: OrchestratorState = {
+    taskId,
+    mode,
+    seq: ['Plan', 'Exec', 'Verify', 'Review', 'Fix Loop'],
+    idx: 0,
+    startedAtMs: Date.now(),
+    stageStartedAtMs: Date.now(),
+    awaitingApproval: mode === 'manual-approve',
+  };
+  orchByTask.set(taskId, orch);
+
+  try {
+    await orchSendStage(taskId, orch.seq[0]);
+    pushTimeline(taskId, `orch> started (${mode})`, 'ok');
+
+    orch.timer = setInterval(() => {
+      void orchTick(taskId);
+    }, 2000);
+
+    res.json({ ok: true });
+  } catch (e) {
+    orchStop(taskId, 'start failed');
+    res.status(500).json({ error: (e as Error).message });
+  }
+});
+
+app.post('/api/tasks/:id/orchestrate/approve-next', async (req, res) => {
+  const taskId = req.params.id;
+  const orch = orchByTask.get(taskId);
+  if (!orch) return res.status(404).json({ error: 'not running' });
+  orch.awaitingApproval = false;
+  pushTimeline(taskId, 'orch> approved next', 'neutral');
+  res.json({ ok: true });
+});
+
+app.post('/api/tasks/:id/orchestrate/stop', (req, res) => {
+  orchStop(req.params.id, 'manual stop');
+  res.json({ ok: true });
 });
 
 // SPA fallback for deep links
