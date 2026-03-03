@@ -328,9 +328,11 @@ export function TaskDetailPage() {
   return (
     <div className="container" style={{ maxWidth: 1440 }}>
       <div className="card" style={{ background: '#1E2026', borderRadius: 6, border: '1px solid #2A2B30' }}>
-        <div className="spread" style={{ gap: 12 }}>
-          <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
-            <div style={{ fontSize: 26, fontWeight: 900 }}>TASK_DETAIL // AGENT_CONTROL_CENTER</div>
+        <div className="spread taskHeader" style={{ gap: 12 }}>
+          <div className="row" style={{ gap: 10, flexWrap: 'wrap', minWidth: 0 }}>
+            <div className="taskTitle" style={{ fontSize: 26, fontWeight: 900 }}>
+              TASK_DETAIL // AGENT_CONTROL_CENTER
+            </div>
             <Link
               className="btn"
               style={{ borderColor: '#3F3F46', color: '#a1a1aa', background: 'transparent' }}
@@ -339,13 +341,15 @@ export function TaskDetailPage() {
               Back
             </Link>
           </div>
-          <button
-            className="btn"
-            style={{ borderColor: '#22c55e', color: '#22c55e', background: 'transparent' }}
-            onClick={() => void syncPaneTitles()}
-          >
-            Sync pane titles
-          </button>
+          <div className="taskHeaderActions">
+            <button
+              className="btn"
+              style={{ borderColor: '#22c55e', color: '#22c55e', background: 'transparent' }}
+              onClick={() => void syncPaneTitles()}
+            >
+              Sync pane titles
+            </button>
+          </div>
         </div>
         {toast ? (
           <div
