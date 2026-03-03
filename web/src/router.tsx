@@ -2,6 +2,7 @@ import React from 'react';
 import { createBrowserRouter } from 'react-router-dom';
 import { DashboardPage } from './screens/DashboardPage';
 import { HelpPage } from './screens/HelpPage';
+import { TaskDetailMobilePage } from './screens/TaskDetailMobilePage';
 import { TaskDetailPage } from './screens/TaskDetailPage';
 
 export const router = createBrowserRouter(
@@ -9,6 +10,7 @@ export const router = createBrowserRouter(
     { path: '/', element: <DashboardPage /> },
     { path: '/help', element: <HelpPage /> },
     { path: '/tasks/:taskId', element: <TaskDetailPage /> },
+    { path: '/m/tasks/:taskId', element: <TaskDetailMobilePage /> },
   ],
   {
     // Works with Vite base when deployed under a subpath.
