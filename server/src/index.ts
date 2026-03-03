@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { listTasks, getTaskDetail, pushTimeline } from './store.js';
-import { tmuxCapture, tmuxSend, type TmuxTarget } from './tmux.js';
+import { tmuxCapture, tmuxPaneCurrentCommand, tmuxSend, type TmuxTarget } from './tmux.js';
 
 const PORT = Number(process.env.PORT ?? 8787);
 
@@ -144,10 +144,21 @@ app.post('/api/tasks/:id/stage', async (req, res) => {
   pushTimeline(req.params.id, `stage>${stage} -> @${tpl.role}`, 'neutral');
 
   try {
-    // Always run via codex so stage buttons work even when the pane is just a shell.
-    const cmd = `codex --yolo ${bashDollarString(tpl.text)}`;
-    await tmuxSend(tmuxTarget, targetPane, cmd);
-    res.json({ ok: true });
+    // Smart mode:
+    // - If codex is already running in the pane, just send the prompt.
+    // - Otherwise, start codex --yolo with the prompt so it still works.
+    const current = await tmuxPaneCurrentCommand(tmuxTarget, targetPane).catch(() => '');
+    const isCodex = current === 'codex';
+
+    if (isCodex) {
+      await tmuxSend(tmuxTarget, targetPane, tpl.text);
+    } else {
+      const cmd = `codex --yolo ${bashDollarString(tpl.text)}`;
+      await tmuxSend(tmuxTarget, targetPane, cmd);
+    }
+
+    pushTimeline(req.params.id, `stage_sent: ${stage} (${isCodex ? 'prompt' : 'spawn codex'})`, 'ok');
+    res.json({ ok: true, mode: isCodex ? 'prompt' : 'spawn' });
   } catch (e) {
     pushTimeline(req.params.id, `stage_failed: ${(e as Error).message}`, 'warn');
     res.status(500).json({ error: 'stage failed' });
