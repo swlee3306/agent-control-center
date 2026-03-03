@@ -45,9 +45,14 @@ a{ color: inherit; text-decoration: none; }
 
 .tableRow{ display:flex; gap: 8px; align-items:center; background:#1a1a1a; border-radius: 12px; padding: 12px; }
 .tableHead{ display:flex; gap: 8px; align-items:center; background:#2d2d2d; border-radius: 12px; padding: 8px 12px; color:#777; font-weight: 700; }
-.colId{ width: 90px; }
-.colSummary{ width: 360px; flex: 1; }
-.colAgent{ width: 180px; }
-.colStage{ width: 150px; }
-.colStatus{ width: 110px; }
-.colEta{ width: 80px; }
+
+/* Prevent long ids/summaries from bleeding into other columns */
+.tableRow > div,
+.tableHead > div{ overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.colId{ flex: 0 0 240px; }
+.colSummary{ flex: 1 1 auto; min-width: 0; }
+.colAgent{ flex: 0 0 180px; }
+.colStage{ flex: 0 0 150px; }
+.colStatus{ flex: 0 0 110px; }
+.colEta{ flex: 0 0 80px; }
