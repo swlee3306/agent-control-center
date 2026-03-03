@@ -152,62 +152,25 @@ export function AgentConsolePage() {
 
   return (
     <div style={{ maxWidth: 1320, margin: '0 auto', padding: 20 }}>
-      <div
-        style={{
-          background: '#1E2026',
-          border: '1px solid #2A2B30',
-          borderRadius: 6,
-          padding: '14px 16px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 12,
-          flexWrap: 'wrap',
-        }}
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <div style={{ color: '#F4F4F5', fontSize: 28, fontWeight: 900, letterSpacing: -0.5 }}>AGENT CONSOLE</div>
-          <div style={{ color: '#71717A' }} className="mono">
-            // ROLE_PRIMARY_AGENT : {profile.label}
+      <div className="card" style={{ background: '#1E2026', borderRadius: 6, border: '1px solid #2A2B30' }}>
+        <div className="spread" style={{ gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
+            <div className="h1">AGENT CONSOLE</div>
+            <div className="mono xs muted">// ROLE_PRIMARY_AGENT : {profile.label}</div>
           </div>
-        </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          <div
-            style={{
-              height: 30,
-              background: '#16171B',
-              borderRadius: 4,
-              border: `1px solid ${profile.accent}`,
-              padding: '6px 10px',
-              display: 'flex',
-              alignItems: 'center',
-            }}
-          >
-            <span className="mono" style={{ color: profile.accent, fontSize: 10, fontWeight: 900 }}>
+          <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+            <span className="chip mono" style={{ borderColor: profile.accent, color: profile.accent }}>
               {detail?.agents?.[agentRole]?.status ? detail.agents[agentRole].status.toUpperCase() : 'LIVE'}
             </span>
+            <Link to={`/tasks/${encodeURIComponent(taskId ?? '')}`} className="btn btnOutline mono btnSm">
+              &lt;- BACK TO TASK {taskId ?? ''}
+            </Link>
           </div>
-
-          <Link
-            to={`/tasks/${encodeURIComponent(taskId ?? '')}`}
-            style={{
-              height: 34,
-              background: '#232529',
-              borderRadius: 4,
-              border: '1px solid #2A2B30',
-              padding: '8px 12px',
-              color: '#F4F4F5',
-              textDecoration: 'none',
-            }}
-            className="mono"
-          >
-            &lt;- BACK TO TASK {taskId ?? ''}
-          </Link>
         </div>
       </div>
 
-      {err ? <div style={{ marginTop: 12, color: '#FF6B35' }}>{err}</div> : null}
+      {err ? <div style={{ marginTop: 12, color: '#FF6B35' }} className="small">{err}</div> : null}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 320px', gap: 16, marginTop: 16 }}>
         {/* left: log + command */}
