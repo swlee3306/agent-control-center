@@ -18,7 +18,13 @@ export async function tmuxCapture(target: TmuxTarget, paneIndex: number, lines =
 export async function tmuxSend(target: TmuxTarget, paneIndex: number, text: string) {
   const pane = `${target.session}:0.${paneIndex}`;
 
-  // send text as literal, then Enter separately (tmux skill guidance)
+  // send text as literal, then Enter separately
   await execFileAsync('tmux', ['-S', target.socket, 'send-keys', '-t', pane, '-l', '--', text]);
   await execFileAsync('tmux', ['-S', target.socket, 'send-keys', '-t', pane, 'Enter']);
+}
+
+export async function tmuxPaneCurrentCommand(target: TmuxTarget, paneIndex: number) {
+  const pane = `${target.session}:0.${paneIndex}`;
+  const { stdout } = await execFileAsync('tmux', ['-S', target.socket, 'display-message', '-p', '-t', pane, '#{pane_current_command}']);
+  return stdout.trim();
 }
