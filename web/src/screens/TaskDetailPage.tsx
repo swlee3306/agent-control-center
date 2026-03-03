@@ -51,6 +51,7 @@ export function TaskDetailPage() {
   const [detail, setDetail] = React.useState<TaskDetail | null>(null);
   const [cmd, setCmd] = React.useState('');
   const [err, setErr] = React.useState<string | null>(null);
+  const [toast, setToast] = React.useState<{ kind: 'ok' | 'warn'; msg: string } | null>(null);
 
   async function refresh() {
     if (!taskId) return;
@@ -78,12 +79,27 @@ export function TaskDetailPage() {
 
   async function runStage(stage: string) {
     if (!taskId) return;
-    await apiPost(`/api/tasks/${encodeURIComponent(taskId)}/stage`, { stage });
-    await refresh();
+    try {
+      await apiPost(`/api/tasks/${encodeURIComponent(taskId)}/stage`, { stage });
+      showToast('ok', `Stage sent: ${stage}`);
+      await refresh();
+    } catch (e) {
+      showToast('warn', String((e as Error).message || e));
+    }
+  }
+
+  function showToast(kind: 'ok' | 'warn', msg: string) {
+    setToast({ kind, msg });
+    window.setTimeout(() => setToast(null), 2500);
   }
 
   async function syncPaneTitles() {
-    await apiPost('/api/tmux/sync-titles', {});
+    try {
+      await apiPost('/api/tmux/sync-titles', {});
+      showToast('ok', 'Synced pane titles');
+    } catch (e) {
+      showToast('warn', String((e as Error).message || e));
+    }
   }
 
   return (
@@ -91,10 +107,32 @@ export function TaskDetailPage() {
       <div className="card" style={{ background: '#1E2026', borderRadius: 6, border: '1px solid #2A2B30' }}>
         <div className="spread" style={{ gap: 12 }}>
           <div style={{ fontSize: 26, fontWeight: 900 }}>TASK_DETAIL // AGENT_CONTROL_CENTER</div>
-          <button className="btn" style={{ borderColor: '#22c55e', color: '#22c55e', background: 'transparent' }} onClick={() => void syncPaneTitles()}>
+          <button
+            className="btn"
+            style={{ borderColor: '#22c55e', color: '#22c55e', background: 'transparent' }}
+            onClick={() => void syncPaneTitles()}
+          >
             Sync pane titles
           </button>
         </div>
+        {toast ? (
+          <div
+            style={{
+              marginTop: 10,
+              background: '#232529',
+              border: `1px solid ${toast.kind === 'ok' ? '#22c55e' : '#f59e0b'}`,
+              borderRadius: 6,
+              padding: 10,
+            }}
+          >
+            <div
+              className="mono"
+              style={{ color: toast.kind === 'ok' ? '#22c55e' : '#f59e0b', fontSize: 12, fontWeight: 800 }}
+            >
+              {toast.kind === 'ok' ? 'OK' : 'WARN'}: {toast.msg}
+            </div>
+          </div>
+        ) : null}
         <div className="row mono" style={{ marginTop: 10, color: '#71717A', fontSize: 12 }}>
           <span className={statusBadge(detail?.status ?? 'idle')}>
             STATUS: {(detail?.status ?? 'idle').toUpperCase()}
@@ -220,13 +258,55 @@ export function TaskDetailPage() {
               </div>
 
               <div className="row" style={{ marginTop: 10, flexWrap: 'wrap' }}>
-                <button className="btn btnPrimary" onClick={() => void apiPost(`/api/tasks/${encodeURIComponent(taskId ?? '')}/orchestrate/start`, { mode: 'manual-approve' })}>
+                <button
+                  className="btn btnPrimary"
+                  onClick={() =>
+                    void (async () => {
+                      try {
+                        await apiPost(`/api/tasks/${encodeURIComponent(taskId ?? '')}/orchestrate/start`, {
+                          mode: 'manual-approve',
+                        });
+                        showToast('ok', 'Orchestrator started');
+                        await refresh();
+                      } catch (e) {
+                        showToast('warn', String((e as Error).message || e));
+                      }
+                    })()
+                  }
+                >
                   Start Orchestrator (manual)
                 </button>
-                <button className="btn" style={{ borderColor: '#22c55e', color: '#22c55e' }} onClick={() => void apiPost(`/api/tasks/${encodeURIComponent(taskId ?? '')}/orchestrate/approve-next`, {})}>
+                <button
+                  className="btn"
+                  style={{ borderColor: '#22c55e', color: '#22c55e' }}
+                  onClick={() =>
+                    void (async () => {
+                      try {
+                        await apiPost(`/api/tasks/${encodeURIComponent(taskId ?? '')}/orchestrate/approve-next`, {});
+                        showToast('ok', 'Approved next stage');
+                        await refresh();
+                      } catch (e) {
+                        showToast('warn', String((e as Error).message || e));
+                      }
+                    })()
+                  }
+                >
                   Approve Next
                 </button>
-                <button className="btn btnOutlineWarn" onClick={() => void apiPost(`/api/tasks/${encodeURIComponent(taskId ?? '')}/orchestrate/stop`, {})}>
+                <button
+                  className="btn btnOutlineWarn"
+                  onClick={() =>
+                    void (async () => {
+                      try {
+                        await apiPost(`/api/tasks/${encodeURIComponent(taskId ?? '')}/orchestrate/stop`, {});
+                        showToast('warn', 'Orchestrator stopped');
+                        await refresh();
+                      } catch (e) {
+                        showToast('warn', String((e as Error).message || e));
+                      }
+                    })()
+                  }
+                >
                   Stop Orchestrator
                 </button>
               </div>

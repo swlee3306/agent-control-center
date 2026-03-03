@@ -29,9 +29,19 @@ function withBase(path: string) {
   return `${import.meta.env.BASE_URL}${path}`;
 }
 
+async function readError(res: Response): Promise<string> {
+  try {
+    const data = (await res.json()) as { error?: string };
+    if (data?.error) return data.error;
+  } catch {
+    // ignore
+  }
+  return `${res.status} ${res.statusText}`;
+}
+
 export async function apiGet<T>(path: string): Promise<T> {
   const res = await fetch(withBase(path));
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  if (!res.ok) throw new Error(await readError(res));
   return (await res.json()) as T;
 }
 
@@ -41,6 +51,6 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  if (!res.ok) throw new Error(await readError(res));
   return (await res.json()) as T;
 }
