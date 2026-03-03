@@ -1,6 +1,21 @@
 :root{
   color-scheme: dark;
   font-family: var(--acc-font-sans);
+
+  /* Typography scale */
+  --acc-fs-xs: 11px;
+  --acc-fs-sm: 12px;
+  --acc-fs-md: 14px;
+  --acc-fs-lg: 18px;
+  --acc-fs-xl: 22px;
+  --acc-fs-2xl: 28px;
+
+  /* Controls */
+  --acc-btn-h: 40px;
+  --acc-btn-pad-x: 14px;
+  --acc-btn-r: 12px;
+  --acc-input-h: 40px;
+  --acc-input-r: 12px;
 }
 
 html, body{
@@ -15,13 +30,59 @@ html, body{
 
 a{ color: inherit; text-decoration: none; }
 
+/* Typography helpers */
+.h1{ font-size: var(--acc-fs-xl); font-weight: 900; }
+.h2{ font-size: var(--acc-fs-lg); font-weight: 800; }
+.small{ font-size: var(--acc-fs-sm); }
+.xs{ font-size: var(--acc-fs-xs); }
+.muted{ color: #71717A; }
+
+.input{
+  height: var(--acc-input-h);
+  border-radius: var(--acc-input-r);
+  border: 1px solid #3F3F46;
+  background: #232529;
+  color: #f4f4f5;
+  padding: 0 12px;
+  outline: none;
+}
+.inputSm{ height: 32px; border-radius: 10px; font-size: var(--acc-fs-xs); padding: 0 10px; }
+
+.chip{
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--acc-stroke);
+  background: #16171B;
+  font-size: var(--acc-fs-xs);
+  font-weight: 900;
+}
+
 .container{ padding: var(--acc-pad); max-width: 1360px; margin: 0 auto; width: 100%; }
 
 .card{ background: var(--acc-panel); border-radius: var(--acc-r-lg); padding: 16px; }
 
 .mono{ font-family: var(--acc-font-mono); }
 
-.btn{ border: 1px solid #333; background: #2d2d2d; color: #fff; padding: 10px 14px; border-radius: var(--acc-r-lg); cursor: pointer; transition: transform .06s ease, filter .12s ease, opacity .12s ease; }
+.btn{
+  border: 1px solid #333;
+  background: #2d2d2d;
+  color: #fff;
+  height: var(--acc-btn-h);
+  padding: 0 var(--acc-btn-pad-x);
+  border-radius: var(--acc-btn-r);
+  cursor: pointer;
+  font-size: var(--acc-fs-sm);
+  line-height: 1;
+  transition: transform .06s ease, filter .12s ease, opacity .12s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.btnSm{ height: 32px; padding: 0 10px; font-size: var(--acc-fs-xs); border-radius: 10px; }
+.btnLg{ height: 48px; padding: 0 16px; font-size: var(--acc-fs-md); border-radius: 14px; }
 .btnOutline{ background: transparent; border-color: var(--acc-stroke); color: #a1a1aa; }
 .btnOutlineSuccess{ background: transparent; border-color: var(--acc-success); color: var(--acc-success); }
 .btn:active{ transform: translateY(1px) scale(0.99); filter: brightness(1.05); }
