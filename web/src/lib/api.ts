@@ -21,14 +21,22 @@ export type TaskDetail = {
   timeline: Array<{ t: string; level: 'ok' | 'warn' | 'neutral'; msg: string }>;
 };
 
+function withBase(path: string) {
+  // If path starts with '/', treat it as app-root relative (respect BASE_URL subpath).
+  if (path.startsWith('/')) {
+    return `${import.meta.env.BASE_URL}${path.slice(1)}`;
+  }
+  return `${import.meta.env.BASE_URL}${path}`;
+}
+
 export async function apiGet<T>(path: string): Promise<T> {
-  const res = await fetch(path);
+  const res = await fetch(withBase(path));
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
   return (await res.json()) as T;
 }
 
 export async function apiPost<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(path, {
+  const res = await fetch(withBase(path), {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
