@@ -1,6 +1,6 @@
 import React from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { apiGet, apiPost, type AgentRole, type TaskDetail } from '../lib/api';
+import { useParams } from 'react-router-dom';
+import { apiPost, type AgentRole } from '../lib/api';
 
 const roles: AgentRole[] = ['architect', 'executor', 'qa', 'reviewer'];
 
@@ -22,7 +22,7 @@ function Pill({ active, children, onClick }: { active?: boolean; children: React
   );
 }
 
-function MobileLog({ role }: { role: AgentRole }) {
+function useRoleLogText(role: AgentRole) {
   const [text, setText] = React.useState<string>('');
 
   React.useEffect(() => {
@@ -41,21 +41,15 @@ function MobileLog({ role }: { role: AgentRole }) {
     return () => ws.close();
   }, [role]);
 
-  return (
-    <div className="term" style={{ height: 260 }}>
-      <div className="termLine" style={{ color: '#a1a1aa' }}>
-        {text || '(waiting for tmux log...)'}
-      </div>
-    </div>
-  );
+  return text;
 }
 
 export function TaskDetailMobilePage() {
   const { taskId } = useParams();
-  const [detail, setDetail] = React.useState<TaskDetail | null>(null);
   const [role, setRole] = React.useState<AgentRole>('architect');
   const [cmd, setCmd] = React.useState<string>('');
   const [toast, setToast] = React.useState<string | null>(null);
+  const logText = useRoleLogText(role);
 
   function show(msg: string) {
     setToast(msg);
@@ -63,14 +57,8 @@ export function TaskDetailMobilePage() {
   }
 
   async function refresh() {
-    if (!taskId) return;
-    setDetail(await apiGet<TaskDetail>(`/api/tasks/${encodeURIComponent(taskId)}`));
+    // TODO: load task meta/status for mobile view
   }
-
-  React.useEffect(() => {
-    void refresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [taskId]);
 
   async function send() {
     if (!taskId) return;
@@ -79,50 +67,112 @@ export function TaskDetailMobilePage() {
     setCmd('');
     await apiPost(`/api/tasks/${encodeURIComponent(taskId)}/command`, { role, text });
     show(`sent → ${role}`);
-    await refresh();
   }
 
   async function runStage(stage: string) {
     if (!taskId) return;
     await apiPost(`/api/tasks/${encodeURIComponent(taskId)}/stage`, { stage });
     show(`stage → ${stage}`);
-    await refresh();
   }
 
   return (
-    <div className="container" style={{ maxWidth: 520, padding: 16 }}>
-      <div className="card" style={{ background: '#111318', border: `1px solid var(--acc-stroke)` }}>
+    <div className="container" style={{ maxWidth: 430, padding: 16 }}>
+      <div
+        className="card"
+        style={{
+          background: 'var(--acc-m-surface)',
+          border: `1px solid rgba(42,43,48,0.9)`,
+          borderRadius: 16,
+        }}
+      >
         <div className="spread">
-          <div style={{ fontFamily: 'var(--acc-font-brand)', fontWeight: 700, letterSpacing: 0.4, fontSize: 18 }}>
+          <div
+            className="mono"
+            style={{ fontWeight: 700, letterSpacing: 0.4, fontSize: 18, color: 'var(--acc-m-text)' }}
+          >
             Task Detail
           </div>
-          <Link className="btn btnOutline" to="/">
-            Back
-          </Link>
+          <button className="btn btnOutline" style={{ borderRadius: 999 }} onClick={() => show('TODO: theme')}>
+            Light
+          </button>
         </div>
 
-        <div className="mono" style={{ marginTop: 10, color: '#a1a1aa', fontSize: 12 }}>
-          task_id: {detail?.id ?? taskId}
+        <div
+          style={{
+            marginTop: 10,
+            background: 'var(--acc-m-panel)',
+            border: `1px solid rgba(42,43,48,0.9)`,
+            borderRadius: 10,
+            padding: 10,
+          }}
+        >
+          <div className="mono" style={{ color: 'var(--acc-m-muted2)', fontSize: 11 }}>
+            repo: /workspace/agent-control-center
+          </div>
+          <div className="mono" style={{ color: 'var(--acc-m-muted)', fontSize: 11, marginTop: 6 }}>
+            goal: plan→exec→verify→review with fix loop
+          </div>
         </div>
 
         {toast ? (
-          <div style={{ marginTop: 10, background: '#232529', border: '1px solid var(--acc-warn)', borderRadius: 12, padding: 10 }}>
+          <div
+            style={{
+              marginTop: 10,
+              background: 'var(--acc-card2)',
+              border: '1px solid var(--acc-warn)',
+              borderRadius: 10,
+              padding: 10,
+            }}
+          >
             <div className="mono" style={{ color: 'var(--acc-warn)', fontWeight: 800, fontSize: 12 }}>
               {toast}
             </div>
           </div>
         ) : null}
 
-        <div className="row" style={{ marginTop: 12, flexWrap: 'wrap' }}>
+        <div className="row" style={{ marginTop: 12, flexWrap: 'wrap', gap: 6 }}>
           {roles.map((r) => (
             <Pill key={r} active={role === r} onClick={() => setRole(r)}>
-              {r}
+              {r === 'architect' ? 'architect 🦉' : r === 'executor' ? 'executor 🐺' : r === 'qa' ? 'qa 🦦' : 'reviewer 🦊'}
             </Pill>
           ))}
         </div>
 
+        <div className="row" style={{ marginTop: 12, gap: 8, flexWrap: 'wrap' }}>
+          <span className="badge badgeWarn" style={{ borderColor: '#FF8B96', color: '#FF8B96' }}>
+            Timeout
+          </span>
+          <span className="mono" style={{ color: '#D7E3FF', fontSize: 11 }}>
+            Last: Verify timeout at 14:07
+          </span>
+        </div>
+
+        <div
+          style={{
+            marginTop: 10,
+            background: 'var(--acc-m-fail)',
+            border: '1px solid rgba(42,43,48,0.9)',
+            borderRadius: 10,
+            padding: 10,
+          }}
+        >
+          <div className="mono" style={{ color: 'var(--acc-m-dangerText)', fontSize: 11 }}>
+            원인 요약: qa test command exited 124 (timeout)
+          </div>
+          <div className="mono" style={{ color: '#FFD5DA', fontSize: 11, marginTop: 6 }}>
+            다음 액션: narrow scope + retry verify
+          </div>
+        </div>
+
         <div style={{ marginTop: 12 }}>
-          <MobileLog role={role} />
+          <div
+            className="term"
+            style={{ height: 240, background: 'var(--acc-m-log)', borderRadius: 10, borderColor: 'rgba(42,43,48,0.9)' }}
+          >
+            <div className="termLine" style={{ color: 'var(--acc-m-successText)', fontSize: 11 }}>
+              {logText || '(waiting for tmux log...)'}
+            </div>
+          </div>
         </div>
 
         <div className="row" style={{ marginTop: 12 }}>

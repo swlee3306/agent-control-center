@@ -7,6 +7,18 @@
   --acc-term: #16171B;
   --acc-stroke: #2A2B30;
 
+  /* Mobile (Task Detail Mobile node uKOjL) */
+  --acc-m-surface: #111318;
+  --acc-m-panel: #121A2B;
+  --acc-m-log: #05070D;
+  --acc-m-fail: #2A1418;
+  --acc-m-text: #E6ECFF;
+  --acc-m-muted: #9FB3D9;
+  --acc-m-muted2: #C4D2F0;
+  --acc-m-stage: #8FA7D6;
+  --acc-m-successText: #8FCB9B;
+  --acc-m-dangerText: #FFB4BC;
+
   --acc-text: #F4F4F5;
   --acc-white: #FFFFFF;
   --acc-muted: #71717A;
