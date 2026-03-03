@@ -5,6 +5,7 @@ import { apiDelete, apiGet, apiPost, type Task } from '../lib/api';
 export function DashboardPage() {
   const [tasks, setTasks] = React.useState<Task[] | null>(null);
   const [err, setErr] = React.useState<string | null>(null);
+  const [busy, setBusy] = React.useState<string | null>(null);
 
   async function refresh() {
     try {
@@ -15,6 +16,18 @@ export function DashboardPage() {
     }
   }
 
+  async function runBusy(key: string, fn: () => Promise<void>) {
+    if (busy) return;
+    setBusy(key);
+    try {
+      await fn();
+    } catch (e) {
+      setErr((e as Error).message);
+    } finally {
+      setBusy(null);
+    }
+  }
+
   React.useEffect(() => {
     void refresh();
   }, []);
@@ -22,8 +35,10 @@ export function DashboardPage() {
   async function newTask() {
     const summary = (prompt('Task summary?') ?? '').trim();
     if (!summary) return;
-    const task = await apiPost<Task>('/api/tasks', { summary, agent: 'codex-pool' });
-    location.href = `${import.meta.env.BASE_URL}tasks/${encodeURIComponent(task.id)}`;
+    await runBusy('new_task', async () => {
+      const task = await apiPost<Task>('/api/tasks', { summary, agent: 'codex-pool' });
+      location.href = `${import.meta.env.BASE_URL}tasks/${encodeURIComponent(task.id)}`;
+    });
   }
 
   return (
@@ -37,13 +52,20 @@ export function DashboardPage() {
             </div>
           </div>
           <div className="row">
-            <button className="btn btnPrimary" onClick={() => void newTask()}>
-              new_task
+            <button className="btn btnPrimary" disabled={busy !== null} onClick={() => void newTask()}>
+              {busy === 'new_task' ? (
+                <span className="row" style={{ gap: 8 }}>
+                  <span className="spinner" />
+                  creating…
+                </span>
+              ) : (
+                'new_task'
+              )}
             </button>
             <Link className="btn" style={{ borderColor: '#22c55e', color: '#22c55e', background: 'transparent' }} to="/help">
               help
             </Link>
-            <button className="btn" onClick={() => void refresh()}>
+            <button className="btn" disabled={busy !== null} onClick={() => void refresh()}>
               refresh_log
             </button>
           </div>
@@ -93,32 +115,48 @@ export function DashboardPage() {
                   <div style={{ flex: '0 0 160px', display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                     <button
                       className="btn btnOutlineWarn"
+                      disabled={busy !== null}
                       onClick={(ev) => {
                         ev.preventDefault();
                         ev.stopPropagation();
-                        void (async () => {
+                        void runBusy(`terminate:${t.id}`, async () => {
                           if (!confirm(`Terminate ${t.id}?`)) return;
                           await apiPost(`/api/tasks/${encodeURIComponent(t.id)}/terminate`, {});
                           await refresh();
-                        })();
+                        });
                       }}
                     >
-                      terminate
+                      {busy === `terminate:${t.id}` ? (
+                        <span className="row" style={{ gap: 8 }}>
+                          <span className="spinner" />
+                          …
+                        </span>
+                      ) : (
+                        'terminate'
+                      )}
                     </button>
                     <button
                       className="btn"
                       style={{ borderColor: '#f59e0b', color: '#f59e0b' }}
+                      disabled={busy !== null}
                       onClick={(ev) => {
                         ev.preventDefault();
                         ev.stopPropagation();
-                        void (async () => {
+                        void runBusy(`delete:${t.id}`, async () => {
                           if (!confirm(`Delete ${t.id}? This cannot be undone.`)) return;
                           await apiDelete(`/api/tasks/${encodeURIComponent(t.id)}`);
                           await refresh();
-                        })();
+                        });
                       }}
                     >
-                      delete
+                      {busy === `delete:${t.id}` ? (
+                        <span className="row" style={{ gap: 8 }}>
+                          <span className="spinner" />
+                          …
+                        </span>
+                      ) : (
+                        'delete'
+                      )}
                     </button>
                   </div>
                 </div>
