@@ -18,6 +18,10 @@ function statusBadge(status: Status) {
 
 function RoleLog({ role }: { role: AgentRole }) {
   const [text, setText] = React.useState<string>('');
+  const [q, setQ] = React.useState<string>('');
+  const [autoScroll, setAutoScroll] = React.useState<boolean>(true);
+  const [updatedAt, setUpdatedAt] = React.useState<string>('');
+  const termRef = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
     const wsUrl = `${location.origin}${import.meta.env.BASE_URL.replace(/\/$/, '')}/ws`;
@@ -28,6 +32,7 @@ function RoleLog({ role }: { role: AgentRole }) {
         const msg = JSON.parse(String(ev.data)) as { type: string; role?: string; text?: string };
         if (msg.type === 'role_log' && msg.role === role && typeof msg.text === 'string') {
           setText(msg.text);
+          setUpdatedAt(new Date().toISOString().slice(11, 19));
         }
       } catch {
         // ignore
@@ -37,10 +42,82 @@ function RoleLog({ role }: { role: AgentRole }) {
     return () => ws.close();
   }, [role]);
 
+  const filtered = React.useMemo(() => {
+    if (!q.trim()) return text;
+    const needle = q.toLowerCase();
+    return text
+      .split('\n')
+      .filter((line) => line.toLowerCase().includes(needle))
+      .join('\n');
+  }, [q, text]);
+
+  React.useEffect(() => {
+    if (!autoScroll) return;
+    const el = termRef.current;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
+  }, [autoScroll, filtered]);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(filtered || text);
+    } catch {
+      // fallback
+      const ta = document.createElement('textarea');
+      ta.value = filtered || text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+  }
+
   return (
-    <div className="term" style={{ marginTop: 10, height: 160 }}>
-      <div className="termLine" style={{ color: '#a1a1aa' }}>
-        {text || '(waiting for tmux log...)'}
+    <div style={{ marginTop: 10 }}>
+      <div className="row mono" style={{ gap: 8, justifyContent: 'space-between', color: '#71717A', fontSize: 11 }}>
+        <div className="row mono" style={{ gap: 8 }}>
+          <span>log</span>
+          <span style={{ color: '#52525b' }}>|</span>
+          <span>updated: {updatedAt || '-'}</span>
+        </div>
+        <div className="row" style={{ gap: 8 }}>
+          <label className="row mono" style={{ gap: 6, cursor: 'pointer' }}>
+            <input type="checkbox" checked={autoScroll} onChange={(e) => setAutoScroll(e.target.checked)} />
+            auto-scroll
+          </label>
+          <button className="btn" style={{ borderColor: '#3F3F46', color: '#a1a1aa' }} onClick={() => void copy()}>
+            copy
+          </button>
+        </div>
+      </div>
+
+      <div className="row" style={{ marginTop: 6 }}>
+        <input
+          className="mono"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="search in log…"
+          style={{
+            flex: 1,
+            background: '#232529',
+            border: '1px solid #3F3F46',
+            borderRadius: 6,
+            color: '#f4f4f5',
+            padding: '8px 10px',
+            outline: 'none',
+          }}
+        />
+        {q ? (
+          <button className="btn" style={{ borderColor: '#3F3F46', color: '#a1a1aa' }} onClick={() => setQ('')}>
+            clear
+          </button>
+        ) : null}
+      </div>
+
+      <div ref={termRef} className="term" style={{ marginTop: 8, height: 160 }}>
+        <div className="termLine" style={{ color: '#a1a1aa' }}>
+          {filtered || '(waiting for tmux log...)'}
+        </div>
       </div>
     </div>
   );
