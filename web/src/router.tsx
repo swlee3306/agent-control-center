@@ -4,12 +4,14 @@ import { DashboardPage } from './screens/DashboardPage';
 import { HelpPage } from './screens/HelpPage';
 import { TaskDetailMobilePage } from './screens/TaskDetailMobilePage';
 import { TaskDetailPage } from './screens/TaskDetailPage';
+import { AgentConsolePage } from './screens/AgentConsolePage';
 
 export const router = createBrowserRouter(
   [
     { path: '/', element: <DashboardPage /> },
     { path: '/help', element: <HelpPage /> },
     { path: '/tasks/:taskId', element: <TaskDetailPage /> },
+    { path: '/tasks/:taskId/console/:role', element: <AgentConsolePage /> },
     { path: '/m/tasks/:taskId', element: <TaskDetailMobilePage /> },
   ],
   {

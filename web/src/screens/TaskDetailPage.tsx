@@ -389,7 +389,16 @@ export function TaskDetailPage() {
                 >
                   <div className="spread">
                     <div style={{ fontWeight: 900, textTransform: 'lowercase' }}>{r}</div>
-                    <span className={statusBadge(detail.agents[r].status)}>{detail.agents[r].status}</span>
+                    <div className="row" style={{ gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                      <Link
+                        className="btn"
+                        style={{ borderColor: '#3F3F46', color: '#a1a1aa', background: 'transparent', padding: '6px 8px' }}
+                        to={`/tasks/${encodeURIComponent(taskId ?? '')}/console/${r}`}
+                      >
+                        console
+                      </Link>
+                      <span className={statusBadge(detail.agents[r].status)}>{detail.agents[r].status}</span>
+                    </div>
                   </div>
                   <div className="mono" style={{ color: '#71717A', fontSize: 11, marginTop: 4 }}>
                     ANIMAL: {detail.agents[r].animal}
