@@ -1,6 +1,6 @@
 export type AgentRole = 'architect' | 'executor' | 'qa' | 'reviewer';
 export type Stage = 'Plan' | 'Exec' | 'Verify' | 'Review' | 'Fix Loop';
-export type Status = 'idle' | 'running' | 'done' | 'error' | 'timeout' | 'blocked';
+export type Status = 'idle' | 'running' | 'done' | 'error' | 'timeout' | 'blocked' | 'terminated';
 
 export type Task = {
   id: string;
@@ -51,6 +51,12 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body),
   });
+  if (!res.ok) throw new Error(await readError(res));
+  return (await res.json()) as T;
+}
+
+export async function apiDelete<T>(path: string): Promise<T> {
+  const res = await fetch(withBase(path), { method: 'DELETE' });
   if (!res.ok) throw new Error(await readError(res));
   return (await res.json()) as T;
 }

@@ -1,6 +1,6 @@
 export type AgentRole = 'architect' | 'executor' | 'qa' | 'reviewer';
 export type Stage = 'Plan' | 'Exec' | 'Verify' | 'Review' | 'Fix Loop';
-export type Status = 'idle' | 'running' | 'done' | 'error' | 'timeout' | 'blocked';
+export type Status = 'idle' | 'running' | 'done' | 'error' | 'timeout' | 'blocked' | 'terminated';
 
 export type Task = {
   id: string;
@@ -171,7 +171,17 @@ export function pushTimeline(id: string, msg: string, level: 'ok' | 'warn' | 'ne
   scheduleSave();
 }
 
-export function setTaskState(id: string, patch: Partial<Pick<Task, 'stage' | 'status' | 'summary' | 'agent' | 'eta'>> & Partial<Pick<TaskDetail, 'summary' | 'status'>>) {
+export function deleteTask(id: string) {
+  if (!state.tasks[id] || !state.details[id]) throw new Error('not found');
+  delete state.tasks[id];
+  delete state.details[id];
+  scheduleSave();
+}
+
+export function setTaskState(
+  id: string,
+  patch: Partial<Pick<Task, 'stage' | 'status' | 'summary' | 'agent' | 'eta'>> & Partial<Pick<TaskDetail, 'summary' | 'status'>>,
+) {
   const t = state.tasks[id];
   const d = state.details[id];
   if (!t || !d) throw new Error('not found');

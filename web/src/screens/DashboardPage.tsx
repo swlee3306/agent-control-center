@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { apiGet, apiPost, type Task } from '../lib/api';
+import { apiDelete, apiGet, apiPost, type Task } from '../lib/api';
 
 export function DashboardPage() {
   const [tasks, setTasks] = React.useState<Task[] | null>(null);
@@ -64,27 +64,63 @@ export function DashboardPage() {
           <div className="colStage">stage</div>
           <div className="colStatus">status</div>
           <div className="colEta">eta</div>
+          <div style={{ flex: '0 0 160px', textAlign: 'right' }}>actions</div>
         </div>
 
         {tasks ? (
           tasks.map((t) => (
-            <Link key={t.id} to={`/tasks/${encodeURIComponent(t.id)}`}>
-              <div className="tableRow mono" style={{ marginBottom: 10 }}>
-                <div className="colId">{t.id}</div>
-                <div className="colSummary">{t.summary}</div>
-                <div className="colAgent">{t.agent}</div>
-                <div className="colStage" style={{ color: t.stage === 'Plan' ? '#00d4aa' : '#fff' }}>
-                  {t.stage}
+            <div key={t.id} style={{ marginBottom: 10 }}>
+              <Link to={`/tasks/${encodeURIComponent(t.id)}`} style={{ textDecoration: 'none' }}>
+                <div className="tableRow mono">
+                  <div className="colId">{t.id}</div>
+                  <div className="colSummary">{t.summary}</div>
+                  <div className="colAgent">{t.agent}</div>
+                  <div className="colStage" style={{ color: t.stage === 'Plan' ? '#00d4aa' : '#fff' }}>
+                    {t.stage}
+                  </div>
+                  <div
+                    className="colStatus"
+                    style={{ color: t.status === 'running' || t.status === 'done' ? '#00d4aa' : '#ff6b35' }}
+                  >
+                    {t.status}
+                  </div>
+                  <div className="colEta" style={{ color: '#777' }}>
+                    {t.eta ?? ''}
+                  </div>
+                  <div style={{ flex: '0 0 160px', display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                    <button
+                      className="btn btnOutlineWarn"
+                      onClick={(ev) => {
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                        void (async () => {
+                          if (!confirm(`Terminate ${t.id}?`)) return;
+                          await apiPost(`/api/tasks/${encodeURIComponent(t.id)}/terminate`, {});
+                          await refresh();
+                        })();
+                      }}
+                    >
+                      terminate
+                    </button>
+                    <button
+                      className="btn"
+                      style={{ borderColor: '#f59e0b', color: '#f59e0b' }}
+                      onClick={(ev) => {
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                        void (async () => {
+                          if (!confirm(`Delete ${t.id}? This cannot be undone.`)) return;
+                          await apiDelete(`/api/tasks/${encodeURIComponent(t.id)}`);
+                          await refresh();
+                        })();
+                      }}
+                    >
+                      delete
+                    </button>
+                  </div>
                 </div>
-                <div
-                  className="colStatus"
-                  style={{ color: t.status === 'running' || t.status === 'done' ? '#00d4aa' : '#ff6b35' }}
-                >
-                  {t.status}
-                </div>
-                <div className="colEta" style={{ color: '#777' }}>{t.eta ?? ''}</div>
-              </div>
-            </Link>
+              </Link>
+            </div>
           ))
         ) : (
           <div className="mono" style={{ color: '#777' }}>loading…</div>
