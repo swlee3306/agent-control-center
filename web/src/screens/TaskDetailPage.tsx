@@ -20,14 +20,18 @@ function escapeRegExp(s: string) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function compileQuery(q: string, regexMode: boolean): { re: RegExp | null; err: string | null } {
+function compileQuery(
+  q: string,
+  regexMode: boolean,
+  caseSensitive: boolean,
+): { re: RegExp | null; err: string | null } {
   const query = q.trim();
   if (!query) return { re: null, err: null };
 
   try {
     const source = regexMode ? query : escapeRegExp(query);
-    // global+case-insensitive, like typical log search
-    const re = new RegExp(source, 'gi');
+    const flags = `g${caseSensitive ? '' : 'i'}`;
+    const re = new RegExp(source, flags);
 
     // Avoid pathological zero-length matches (e.g. ^, $) breaking split/highlight.
     if (re.test('')) return { re: null, err: 'Regex matches empty string (unsupported)' };
@@ -66,6 +70,7 @@ function RoleLog({ role }: { role: AgentRole }) {
   const [text, setText] = React.useState<string>('');
   const [q, setQ] = React.useState<string>('');
   const [regexMode, setRegexMode] = React.useState<boolean>(false);
+  const [caseSensitive, setCaseSensitive] = React.useState<boolean>(false);
   const [autoScroll, setAutoScroll] = React.useState<boolean>(true);
   const [updatedAt, setUpdatedAt] = React.useState<string>('');
   const [expanded, setExpanded] = React.useState<boolean>(false);
@@ -90,7 +95,7 @@ function RoleLog({ role }: { role: AgentRole }) {
     return () => ws.close();
   }, [role]);
 
-  const { re, err } = React.useMemo(() => compileQuery(q, regexMode), [q, regexMode]);
+  const { re, err } = React.useMemo(() => compileQuery(q, regexMode, caseSensitive), [q, regexMode, caseSensitive]);
 
   const filtered = React.useMemo(() => {
     if (!q.trim()) return text;
@@ -134,6 +139,10 @@ function RoleLog({ role }: { role: AgentRole }) {
           <label className="row mono" style={{ gap: 6, cursor: 'pointer' }}>
             <input type="checkbox" checked={regexMode} onChange={(e) => setRegexMode(e.target.checked)} />
             regex
+          </label>
+          <label className="row mono" style={{ gap: 6, cursor: 'pointer' }}>
+            <input type="checkbox" checked={caseSensitive} onChange={(e) => setCaseSensitive(e.target.checked)} />
+            Aa
           </label>
         </div>
         <div className="row" style={{ gap: 8 }}>
@@ -201,6 +210,10 @@ function RoleLog({ role }: { role: AgentRole }) {
               <label className="row mono" style={{ gap: 6, cursor: 'pointer' }}>
                 <input type="checkbox" checked={regexMode} onChange={(e) => setRegexMode(e.target.checked)} />
                 regex
+              </label>
+              <label className="row mono" style={{ gap: 6, cursor: 'pointer' }}>
+                <input type="checkbox" checked={caseSensitive} onChange={(e) => setCaseSensitive(e.target.checked)} />
+                Aa
               </label>
               {err ? <span style={{ color: '#f59e0b' }}>regex error: {err}</span> : <span />}
             </div>
