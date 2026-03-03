@@ -20,9 +20,26 @@ function escapeRegExp(s: string) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function HighlightedLines({ text, q }: { text: string; q: string }) {
-  if (!q.trim()) return <>{text || '(waiting for tmux log...)'}</>;
-  const re = new RegExp(escapeRegExp(q), 'gi');
+function compileQuery(q: string, regexMode: boolean): { re: RegExp | null; err: string | null } {
+  const query = q.trim();
+  if (!query) return { re: null, err: null };
+
+  try {
+    const source = regexMode ? query : escapeRegExp(query);
+    // global+case-insensitive, like typical log search
+    const re = new RegExp(source, 'gi');
+
+    // Avoid pathological zero-length matches (e.g. ^, $) breaking split/highlight.
+    if (re.test('')) return { re: null, err: 'Regex matches empty string (unsupported)' };
+
+    return { re, err: null };
+  } catch (e) {
+    return { re: null, err: (e as Error).message };
+  }
+}
+
+function HighlightedLines({ text, re }: { text: string; re: RegExp | null }) {
+  if (!re) return <>{text || '(waiting for tmux log...)'}</>;
   const lines = (text || '').split('\n');
   return (
     <>
@@ -48,6 +65,7 @@ function HighlightedLines({ text, q }: { text: string; q: string }) {
 function RoleLog({ role }: { role: AgentRole }) {
   const [text, setText] = React.useState<string>('');
   const [q, setQ] = React.useState<string>('');
+  const [regexMode, setRegexMode] = React.useState<boolean>(false);
   const [autoScroll, setAutoScroll] = React.useState<boolean>(true);
   const [updatedAt, setUpdatedAt] = React.useState<string>('');
   const [expanded, setExpanded] = React.useState<boolean>(false);
@@ -72,14 +90,17 @@ function RoleLog({ role }: { role: AgentRole }) {
     return () => ws.close();
   }, [role]);
 
+  const { re, err } = React.useMemo(() => compileQuery(q, regexMode), [q, regexMode]);
+
   const filtered = React.useMemo(() => {
     if (!q.trim()) return text;
-    const needle = q.toLowerCase();
+    if (err || !re) return '';
+
     return text
       .split('\n')
-      .filter((line) => line.toLowerCase().includes(needle))
+      .filter((line) => re.test(line))
       .join('\n');
-  }, [q, text]);
+  }, [err, q, re, text]);
 
   React.useEffect(() => {
     if (!autoScroll) return;
@@ -105,10 +126,15 @@ function RoleLog({ role }: { role: AgentRole }) {
   return (
     <div style={{ marginTop: 10 }}>
       <div className="row mono" style={{ gap: 8, justifyContent: 'space-between', color: '#71717A', fontSize: 11 }}>
-        <div className="row mono" style={{ gap: 8 }}>
+        <div className="row mono" style={{ gap: 8, flexWrap: 'wrap' }}>
           <span>log</span>
           <span style={{ color: '#52525b' }}>|</span>
           <span>updated: {updatedAt || '-'}</span>
+          <span style={{ color: '#52525b' }}>|</span>
+          <label className="row mono" style={{ gap: 6, cursor: 'pointer' }}>
+            <input type="checkbox" checked={regexMode} onChange={(e) => setRegexMode(e.target.checked)} />
+            regex
+          </label>
         </div>
         <div className="row" style={{ gap: 8 }}>
           <label className="row mono" style={{ gap: 6, cursor: 'pointer' }}>
@@ -124,12 +150,12 @@ function RoleLog({ role }: { role: AgentRole }) {
         </div>
       </div>
 
-      <div className="row" style={{ marginTop: 6 }}>
+      <div className="row" style={{ marginTop: 6, flexWrap: 'wrap' }}>
         <input
           className="mono"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="search in log…"
+          placeholder={regexMode ? 'regex search…' : 'search in log…'}
           style={{
             flex: 1,
             background: '#232529',
@@ -138,6 +164,7 @@ function RoleLog({ role }: { role: AgentRole }) {
             color: '#f4f4f5',
             padding: '8px 10px',
             outline: 'none',
+            minWidth: 200,
           }}
         />
         {q ? (
@@ -145,11 +172,16 @@ function RoleLog({ role }: { role: AgentRole }) {
             clear
           </button>
         ) : null}
+        {err ? (
+          <span className="mono" style={{ color: '#f59e0b', fontSize: 11 }}>
+            regex error: {err}
+          </span>
+        ) : null}
       </div>
 
       <div ref={termRef} className="term" style={{ marginTop: 8, height: 160 }}>
         <div className="termLine" style={{ color: '#a1a1aa' }}>
-          <HighlightedLines text={filtered} q={q} />
+          <HighlightedLines text={filtered} re={re} />
         </div>
       </div>
 
@@ -165,12 +197,20 @@ function RoleLog({ role }: { role: AgentRole }) {
               </button>
             </div>
 
-            <div className="row" style={{ marginTop: 10 }}>
+            <div className="row mono" style={{ marginTop: 10, gap: 10, flexWrap: 'wrap', color: '#71717A', fontSize: 11 }}>
+              <label className="row mono" style={{ gap: 6, cursor: 'pointer' }}>
+                <input type="checkbox" checked={regexMode} onChange={(e) => setRegexMode(e.target.checked)} />
+                regex
+              </label>
+              {err ? <span style={{ color: '#f59e0b' }}>regex error: {err}</span> : <span />}
+            </div>
+
+            <div className="row" style={{ marginTop: 6 }}>
               <input
                 className="mono"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="search in log…"
+                placeholder={regexMode ? 'regex search…' : 'search in log…'}
                 style={{
                   flex: 1,
                   background: '#232529',
@@ -193,7 +233,7 @@ function RoleLog({ role }: { role: AgentRole }) {
 
             <div className="term" style={{ marginTop: 10, height: '70vh' as const }}>
               <div className="termLine" style={{ color: '#a1a1aa' }}>
-                <HighlightedLines text={filtered} q={q} />
+                <HighlightedLines text={filtered} re={re} />
               </div>
             </div>
           </div>
