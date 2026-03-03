@@ -1,0 +1,14 @@
+{
+  "name": "agent-control-center",
+  "private": true,
+  "workspaces": [
+    "web",
+    "server"
+  ],
+  "scripts": {
+    "dev": "npm -w server run dev & npm -w web run dev",
+    "build": "npm -w web run build && npm -w server run build",
+    "lint": "npm -w web run lint && npm -w server run lint",
+    "format": "npm -w web run format && npm -w server run format"
+  }
+}

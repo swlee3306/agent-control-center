@@ -1,0 +1,56 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: acc
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: acc
+  namespace: acc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: acc
+  template:
+    metadata:
+      labels:
+        app: acc
+    spec:
+      containers:
+        - name: acc
+          image: acc:dev
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: PORT
+              value: "8787"
+            - name: ACC_TMUX_SOCKET
+              value: "/host/tmp/openclaw-tmux-sockets/openclaw.sock"
+            - name: ACC_TMUX_SESSION
+              value: "codex-pool"
+          ports:
+            - containerPort: 8787
+          volumeMounts:
+            - name: tmux-socket
+              mountPath: /host/tmp/openclaw-tmux-sockets
+              readOnly: true
+      volumes:
+        - name: tmux-socket
+          hostPath:
+            path: /tmp/openclaw-tmux-sockets
+            type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: acc
+  namespace: acc
+spec:
+  selector:
+    app: acc
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8787
+  type: NodePort
