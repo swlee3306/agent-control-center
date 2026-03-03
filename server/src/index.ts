@@ -77,6 +77,21 @@ app.post('/api/tasks/:id/command', async (req, res) => {
 
 type Stage = 'Plan' | 'Exec' | 'Verify' | 'Review' | 'Fix Loop';
 
+function bashDollarString(input: string) {
+  // Produce a safe $'..' string for bash/zsh that preserves newlines.
+  // Escapes: backslash, single quote, and control chars.
+  return (
+    "$'" +
+    input
+      .replace(/\\/g, '\\\\')
+      .replace(/'/g, "\\'")
+      .replace(/\r/g, '')
+      .replace(/\n/g, '\\n')
+      .replace(/\t/g, '\\t') +
+    "'"
+  );
+}
+
 const stageTemplates: Record<Stage, { role: keyof typeof roleToPane; text: string }> = {
   Plan: {
     role: 'architect',
@@ -129,7 +144,9 @@ app.post('/api/tasks/:id/stage', async (req, res) => {
   pushTimeline(req.params.id, `stage>${stage} -> @${tpl.role}`, 'neutral');
 
   try {
-    await tmuxSend(tmuxTarget, targetPane, tpl.text);
+    // Always run via codex so stage buttons work even when the pane is just a shell.
+    const cmd = `codex --yolo ${bashDollarString(tpl.text)}`;
+    await tmuxSend(tmuxTarget, targetPane, cmd);
     res.json({ ok: true });
   } catch (e) {
     pushTimeline(req.params.id, `stage_failed: ${(e as Error).message}`, 'warn');
