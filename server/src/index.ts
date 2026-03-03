@@ -6,7 +6,14 @@ import fs from 'node:fs';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { listTasks, getTaskDetail, pushTimeline } from './store.js';
-import { tmuxCapture, tmuxPaneCurrentCommand, tmuxSend, type TmuxTarget } from './tmux.js';
+import {
+  tmuxCapture,
+  tmuxListPanes,
+  tmuxPaneCurrentCommand,
+  tmuxResolvePaneIndexByTitle,
+  tmuxSend,
+  type TmuxTarget,
+} from './tmux.js';
 
 const PORT = Number(process.env.PORT ?? 8787);
 
@@ -16,11 +23,22 @@ const ACC_TMUX_SESSION = process.env.ACC_TMUX_SESSION ?? 'codex-pool';
 const tmuxTarget: TmuxTarget = { socket: ACC_TMUX_SOCKET, session: ACC_TMUX_SESSION };
 
 const roleToPane: Record<string, number> = {
+  // Fallback mapping; prefer resolving by pane_title (architect/executor/qa/reviewer)
   architect: 0,
   executor: 1,
   qa: 2,
   reviewer: 3,
 };
+
+async function resolveRolePaneIndex(role: string): Promise<number> {
+  const byTitle = await tmuxResolvePaneIndexByTitle(tmuxTarget, role).catch(async () => {
+    // Helps diagnose pane-title mapping issues; errors are ignored.
+    await tmuxListPanes(tmuxTarget).catch(() => []);
+    return null;
+  });
+  if (typeof byTitle === 'number') return byTitle;
+  return roleToPane[role] ?? roleToPane.executor;
+}
 
 const app = express();
 app.use(express.json({ limit: '1mb' }));
@@ -61,8 +79,7 @@ app.post('/api/tasks/:id/command', async (req, res) => {
   const cmd = (text ?? '').trim();
   if (!cmd) return res.status(400).json({ error: 'missing text' });
 
-  const pane = role ? roleToPane[role] : undefined;
-  const targetPane = pane ?? roleToPane.executor; // default executor
+  const targetPane = role ? await resolveRolePaneIndex(role) : await resolveRolePaneIndex('executor');
 
   pushTimeline(req.params.id, `ui>${role ? ` @${role}` : ''} ${cmd}`, 'neutral');
 
@@ -140,7 +157,7 @@ app.post('/api/tasks/:id/stage', async (req, res) => {
   if (!stage || !(stage in stageTemplates)) return res.status(400).json({ error: 'invalid stage' });
 
   const tpl = stageTemplates[stage];
-  const targetPane = roleToPane[tpl.role];
+  const targetPane = await resolveRolePaneIndex(tpl.role);
   pushTimeline(req.params.id, `stage>${stage} -> @${tpl.role}`, 'neutral');
 
   try {
@@ -148,7 +165,8 @@ app.post('/api/tasks/:id/stage', async (req, res) => {
     // - If codex is already running in the pane, just send the prompt.
     // - Otherwise, start codex --yolo with the prompt so it still works.
     const current = await tmuxPaneCurrentCommand(tmuxTarget, targetPane).catch(() => '');
-    const isCodex = current === 'codex';
+    // In our panes, codex often shows as `node` (codex CLI runtime). Treat both as codex.
+    const isCodex = current === 'codex' || current === 'node';
 
     if (isCodex) {
       await tmuxSend(tmuxTarget, targetPane, tpl.text);
@@ -207,7 +225,7 @@ let pollTimer: NodeJS.Timeout | null = null;
 
 async function pollTmuxAndBroadcast() {
   for (const role of Object.keys(roleToPane)) {
-    const pane = roleToPane[role];
+    const pane = await resolveRolePaneIndex(role);
     try {
       const text = await tmuxCapture(tmuxTarget, pane, 220);
       const h = crypto.createHash('sha1').update(text).digest('hex');
@@ -236,7 +254,8 @@ wss.on('connection', (ws) => {
   void (async () => {
     for (const role of Object.keys(roleToPane)) {
       try {
-        const text = await tmuxCapture(tmuxTarget, roleToPane[role], 220);
+        const pane = await resolveRolePaneIndex(role);
+        const text = await tmuxCapture(tmuxTarget, pane, 220);
         ws.send(JSON.stringify({ type: 'role_log', role, text }));
       } catch {
         // ignore

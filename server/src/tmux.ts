@@ -8,6 +8,39 @@ export type TmuxTarget = {
   session: string;
 };
 
+export type PaneInfo = {
+  index: number;
+  title: string;
+  currentCommand: string;
+};
+
+export async function tmuxListPanes(target: TmuxTarget): Promise<PaneInfo[]> {
+  const { stdout } = await execFileAsync('tmux', [
+    '-S',
+    target.socket,
+    'list-panes',
+    '-t',
+    `${target.session}:0`,
+    '-F',
+    '#{pane_index}\t#{pane_title}\t#{pane_current_command}',
+  ]);
+
+  return stdout
+    .trim()
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => {
+      const [idx, title, cmd] = line.split('\t');
+      return { index: Number(idx), title: title ?? '', currentCommand: cmd ?? '' };
+    });
+}
+
+export async function tmuxResolvePaneIndexByTitle(target: TmuxTarget, title: string): Promise<number | null> {
+  const panes = await tmuxListPanes(target);
+  const hit = panes.find((p) => p.title === title);
+  return hit ? hit.index : null;
+}
+
 export async function tmuxCapture(target: TmuxTarget, paneIndex: number, lines = 200) {
   const pane = `${target.session}:0.${paneIndex}`;
   const args = ['-S', target.socket, 'capture-pane', '-p', '-J', '-t', pane, '-S', `-${lines}`];
@@ -25,6 +58,14 @@ export async function tmuxSend(target: TmuxTarget, paneIndex: number, text: stri
 
 export async function tmuxPaneCurrentCommand(target: TmuxTarget, paneIndex: number) {
   const pane = `${target.session}:0.${paneIndex}`;
-  const { stdout } = await execFileAsync('tmux', ['-S', target.socket, 'display-message', '-p', '-t', pane, '#{pane_current_command}']);
+  const { stdout } = await execFileAsync('tmux', [
+    '-S',
+    target.socket,
+    'display-message',
+    '-p',
+    '-t',
+    pane,
+    '#{pane_current_command}',
+  ]);
   return stdout.trim();
 }
