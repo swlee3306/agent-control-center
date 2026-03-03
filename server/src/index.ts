@@ -5,7 +5,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
-import { listTasks, getTaskDetail, pushTimeline } from './store.js';
+import { listTasks, getTaskDetail, pushTimeline, createTask } from './store.js';
 import {
   tmuxCapture,
   tmuxListPanes,
@@ -65,6 +65,19 @@ app.get('/', (_req, res) => {
 
 app.get('/api/tasks', (_req, res) => {
   res.json(listTasks());
+});
+
+app.post('/api/tasks', (req, res) => {
+  const body = req.body as Partial<{ id: string; summary: string; agent: string }>;
+  const summary = (body.summary ?? '').trim();
+  if (!summary) return res.status(400).json({ error: 'missing summary' });
+
+  try {
+    const task = createTask({ summary, agent: body.agent, id: body.id });
+    res.json(task);
+  } catch (e) {
+    res.status(400).json({ error: (e as Error).message });
+  }
 });
 
 app.get('/api/tasks/:id', (req, res) => {
