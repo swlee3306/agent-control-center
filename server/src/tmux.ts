@@ -69,3 +69,9 @@ export async function tmuxPaneCurrentCommand(target: TmuxTarget, paneIndex: numb
   ]);
   return stdout.trim();
 }
+
+export async function tmuxSetPaneTitle(target: TmuxTarget, paneIndex: number, title: string) {
+  const pane = `${target.session}:0.${paneIndex}`;
+  // -T sets pane title
+  await execFileAsync('tmux', ['-S', target.socket, 'select-pane', '-t', pane, '-T', title]);
+}
