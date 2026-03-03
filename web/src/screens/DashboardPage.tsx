@@ -47,7 +47,7 @@ export function DashboardPage() {
         <div className="spread" style={{ gap: 12, flexWrap: 'wrap' }}>
           <div className="row" style={{ gap: 10 }}>
             <div style={{ width: 10, height: 10, borderRadius: 999, background: '#00D4AA', flex: '0 0 auto' }} />
-            <div className="mono small" style={{ fontWeight: 800, letterSpacing: 0.4 }}>
+            <div className="mono h2" style={{ fontWeight: 900, letterSpacing: 0.2 }}>
               AGENT_CONTROL_CENTER // runtime_overview
             </div>
           </div>

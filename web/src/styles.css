@@ -32,7 +32,7 @@ a{ color: inherit; text-decoration: none; }
 
 /* Typography helpers */
 .h1{ font-size: var(--acc-fs-xl); font-weight: 900; }
-.h2{ font-size: var(--acc-fs-lg); font-weight: 800; }
+.h2{ font-size: var(--acc-fs-lg); font-weight: 900; }
 .small{ font-size: var(--acc-fs-sm); }
 .xs{ font-size: var(--acc-fs-xs); }
 .muted{ color: #71717A; }
@@ -146,6 +146,7 @@ a{ color: inherit; text-decoration: none; }
   /* tighten header controls on mobile */
   .btn{ height: 38px; padding: 0 12px; }
   .btnPrimary, .btnSuccess{ font-weight: 800; }
+  .h2{ font-size: 16px; }
 }
 
 .tableRow{ display:flex; gap: 8px; align-items:center; background:#1a1a1a; border-radius: 12px; padding: 12px; }
