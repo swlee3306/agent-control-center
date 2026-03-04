@@ -403,8 +403,9 @@ export function TaskDetailPage() {
                   style={{ background: '#1E2026', borderRadius: 6, border: '1px solid #2A2B30', padding: 12 }}
                 >
                   <div className="spread">
-                    <div style={{ fontWeight: 900, textTransform: 'lowercase' }}>
-                      {r} <span style={{ opacity: 0.9 }}>{roleEmoji[r]}</span>
+                    <div className="roleTitle" style={{ fontWeight: 900, textTransform: 'lowercase' }}>
+                      <span>{r}</span>
+                      <span style={{ opacity: 0.9 }}>{roleEmoji[r]}</span>
                     </div>
                     <div className="row" style={{ gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                       <Link
