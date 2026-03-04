@@ -9,6 +9,7 @@ export type Task = {
   stage: Stage;
   status: Status;
   eta?: string;
+  meta?: Record<string, unknown>;
 };
 
 export type TaskDetail = {
@@ -17,6 +18,7 @@ export type TaskDetail = {
   updatedAtUtc: string;
   status: Status;
   summary: string;
+  meta?: Record<string, unknown>;
   agents: Record<AgentRole, { animal: string; line: string; status: Status }>;
   timeline: Array<{ t: string; level: 'ok' | 'warn' | 'neutral'; msg: string }>;
 };
@@ -180,7 +182,8 @@ export function deleteTask(id: string) {
 
 export function setTaskState(
   id: string,
-  patch: Partial<Pick<Task, 'stage' | 'status' | 'summary' | 'agent' | 'eta'>> & Partial<Pick<TaskDetail, 'summary' | 'status'>>,
+  patch: Partial<Pick<Task, 'stage' | 'status' | 'summary' | 'agent' | 'eta' | 'meta'>> &
+    Partial<Pick<TaskDetail, 'summary' | 'status' | 'meta'>>,
 ) {
   const t = state.tasks[id];
   const d = state.details[id];
@@ -197,6 +200,10 @@ export function setTaskState(
     d.summary = patch.summary;
   }
   if (typeof patch.agent === 'string') t.agent = patch.agent;
+  if (patch.meta && typeof patch.meta === 'object') {
+    t.meta = patch.meta as Record<string, unknown>;
+    d.meta = patch.meta as Record<string, unknown>;
+  }
 
   d.updatedAtUtc = now();
   scheduleSave();

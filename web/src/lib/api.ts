@@ -17,6 +17,7 @@ export type TaskDetail = {
   updatedAtUtc: string;
   status: Status;
   summary: string;
+  meta?: Record<string, unknown>;
   agents: Record<AgentRole, { animal: string; line: string; status: Status }>;
   timeline: Array<{ t: string; level: 'ok' | 'warn' | 'neutral'; msg: string }>;
 };

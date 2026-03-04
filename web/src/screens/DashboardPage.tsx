@@ -7,6 +7,9 @@ export function DashboardPage() {
   const [err, setErr] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState<string | null>(null);
 
+  const [oneLine, setOneLine] = React.useState<string>('');
+  const [runMode, setRunMode] = React.useState<'manual' | 'auto'>('manual');
+
   async function refresh() {
     try {
       setErr(null);
@@ -41,6 +44,16 @@ export function DashboardPage() {
     });
   }
 
+  async function runOneLine() {
+    const text = oneLine.trim();
+    if (!text) return;
+    await runBusy('one_line', async () => {
+      const r = await apiPost<{ taskId: string }>('/api/projects/run', { text, mode: runMode });
+      setOneLine('');
+      location.href = `${import.meta.env.BASE_URL}tasks/${encodeURIComponent(r.taskId)}`;
+    });
+  }
+
   return (
     <div className="container">
       <div className="card" style={{ background: '#212121', marginBottom: 16 }}>
@@ -70,7 +83,49 @@ export function DashboardPage() {
             </button>
           </div>
         </div>
-        {err ? <div style={{ marginTop: 10, color: '#ff6b35' }} className="small">{err}</div> : null}
+        <div style={{ marginTop: 12 }}>
+          <div className="mono" style={{ color: '#a1a1aa', fontSize: 12, marginBottom: 6 }}>
+            Run one-line (프로젝트 생성/개발/배포를 자연어로 요청)
+          </div>
+          <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+            <input
+              className="input mono"
+              value={oneLine}
+              onChange={(e) => setOneLine(e.target.value)}
+              placeholder='예) "/home/sulee/projects/calendar-app 에서 일정관리 웹 만들어서 k8s personal /calendar/ 로 배포해줘"'
+              style={{ flex: 1, minWidth: 280 }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') void runOneLine();
+              }}
+            />
+            <select
+              className="input mono"
+              value={runMode}
+              onChange={(e) => setRunMode(e.target.value === 'auto' ? 'auto' : 'manual')}
+              style={{ flex: '0 0 140px' }}
+              title="execution mode"
+            >
+              <option value="manual">manual</option>
+              <option value="auto">auto</option>
+            </select>
+            <button className="btn btnPrimary" disabled={busy !== null || !oneLine.trim()} onClick={() => void runOneLine()}>
+              {busy === 'one_line' ? (
+                <span className="row" style={{ gap: 8 }}>
+                  <span className="spinner" />
+                  starting…
+                </span>
+              ) : (
+                'run'
+              )}
+            </button>
+          </div>
+        </div>
+
+        {err ? (
+          <div style={{ marginTop: 10, color: '#ff6b35' }} className="small">
+            {err}
+          </div>
+        ) : null}
       </div>
 
       <div className="spread" style={{ marginBottom: 12 }}>
