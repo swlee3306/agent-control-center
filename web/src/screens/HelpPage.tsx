@@ -13,9 +13,20 @@ export function HelpPage() {
         </div>
         <div className="mono" style={{ marginTop: 10, color: '#a1a1aa', lineHeight: 1.7, fontSize: 13 }}>
           <div className="row" style={{ flexWrap: 'wrap', gap: 8 }}>
-            <Link className="btn btnOutline" to="/guide">
+            <Link
+              className="btn"
+              to="/guide"
+              style={{
+                background: '#22c55e',
+                borderColor: '#22c55e',
+                color: '#0b0f0b',
+                fontWeight: 900,
+                padding: '10px 14px',
+              }}
+            >
               실사용 예시 가이드 보기
             </Link>
+            <span style={{ color: '#71717A', fontSize: 12, alignSelf: 'center' }}>처음이면 여기부터 보세요</span>
           </div>
 
           <h3 style={{ marginTop: 16, fontWeight: 900, color: '#e5e7eb' }}>이 프로그램의 의도</h3>
