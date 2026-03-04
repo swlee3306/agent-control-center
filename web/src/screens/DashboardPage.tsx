@@ -56,73 +56,88 @@ export function DashboardPage() {
 
   return (
     <div className="container">
-      <div className="card" style={{ background: '#212121', marginBottom: 16 }}>
-        <div className="spread" style={{ gap: 12, flexWrap: 'wrap' }}>
-          <div className="row" style={{ gap: 10, alignItems: 'flex-start' }}>
-            <div style={{ width: 10, height: 10, borderRadius: 999, background: '#00D4AA', flex: '0 0 auto', marginTop: 10 }} />
-            <div>
-              <div className="mono" style={{ fontSize: 26, fontWeight: 900, letterSpacing: -0.2 }}>
-                AGENT_CONTROL_CENTER
-              </div>
-              <div className="mono" style={{ marginTop: 4, color: '#a1a1aa', fontSize: 14, fontWeight: 800 }}>
-                runtime_overview
+      <div className="card dashboardTop" style={{ background: '#212121', marginBottom: 16 }}>
+        <div className="dashboardHeaderGrid">
+          <div className="dashboardHeaderBlock">
+            <div className="row" style={{ gap: 10, alignItems: 'flex-start' }}>
+              <div
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: 999,
+                  background: '#00D4AA',
+                  flex: '0 0 auto',
+                  marginTop: 10,
+                }}
+              />
+              <div>
+                <div className="mono" style={{ fontSize: 26, fontWeight: 900, letterSpacing: -0.2 }}>
+                  AGENT_CONTROL_CENTER
+                </div>
+                <div className="mono" style={{ marginTop: 4, color: '#a1a1aa', fontSize: 14, fontWeight: 800 }}>
+                  runtime_overview
+                </div>
               </div>
             </div>
           </div>
-          <div className="row" style={{ gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-            <button className="btn btnPrimary" disabled={busy !== null} onClick={() => void newTask()}>
-              {busy === 'new_task' ? (
-                <span className="row" style={{ gap: 8 }}>
-                  <span className="spinner" />
-                  creating…
-                </span>
-              ) : (
-                'new_task'
-              )}
-            </button>
-            <Link className="btn btnOutlineSuccess" to="/help">
-              help
-            </Link>
-            <button className="btn btnOutline" disabled={busy !== null} onClick={() => void refresh()}>
-              refresh_log
-            </button>
+
+          <div className="dashboardHeaderBlock">
+            <div className="mono" style={{ color: '#a1a1aa', fontSize: 12, marginBottom: 6 }}>
+              Run one-line (프로젝트 생성/개발/배포를 자연어로 요청)
+            </div>
+            <div className="row dashboardOneLineRow" style={{ gap: 8, flexWrap: 'wrap' }}>
+              <input
+                className="input mono"
+                value={oneLine}
+                onChange={(e) => setOneLine(e.target.value)}
+                placeholder='예) "/home/sulee/projects/calendar-app 에서 일정관리 웹 만들어서 k8s personal /calendar/ 로 배포해줘"'
+                style={{ flex: 1, minWidth: 280 }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') void runOneLine();
+                }}
+              />
+              <select
+                className="input mono"
+                value={runMode}
+                onChange={(e) => setRunMode(e.target.value === 'auto' ? 'auto' : 'manual')}
+                style={{ flex: '0 0 140px' }}
+                title="execution mode"
+              >
+                <option value="manual">manual</option>
+                <option value="auto">auto</option>
+              </select>
+              <button className="btn btnPrimary" disabled={busy !== null || !oneLine.trim()} onClick={() => void runOneLine()}>
+                {busy === 'one_line' ? (
+                  <span className="row" style={{ gap: 8 }}>
+                    <span className="spinner" />
+                    starting…
+                  </span>
+                ) : (
+                  'run'
+                )}
+              </button>
+            </div>
           </div>
-        </div>
-        <div style={{ marginTop: 12 }}>
-          <div className="mono" style={{ color: '#a1a1aa', fontSize: 12, marginBottom: 6 }}>
-            Run one-line (프로젝트 생성/개발/배포를 자연어로 요청)
-          </div>
-          <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
-            <input
-              className="input mono"
-              value={oneLine}
-              onChange={(e) => setOneLine(e.target.value)}
-              placeholder='예) "/home/sulee/projects/calendar-app 에서 일정관리 웹 만들어서 k8s personal /calendar/ 로 배포해줘"'
-              style={{ flex: 1, minWidth: 280 }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') void runOneLine();
-              }}
-            />
-            <select
-              className="input mono"
-              value={runMode}
-              onChange={(e) => setRunMode(e.target.value === 'auto' ? 'auto' : 'manual')}
-              style={{ flex: '0 0 140px' }}
-              title="execution mode"
-            >
-              <option value="manual">manual</option>
-              <option value="auto">auto</option>
-            </select>
-            <button className="btn btnPrimary" disabled={busy !== null || !oneLine.trim()} onClick={() => void runOneLine()}>
-              {busy === 'one_line' ? (
-                <span className="row" style={{ gap: 8 }}>
-                  <span className="spinner" />
-                  starting…
-                </span>
-              ) : (
-                'run'
-              )}
-            </button>
+
+          <div className="dashboardHeaderBlock dashboardHeaderActions">
+            <div className="row" style={{ gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              <button className="btn btnPrimary" disabled={busy !== null} onClick={() => void newTask()}>
+                {busy === 'new_task' ? (
+                  <span className="row" style={{ gap: 8 }}>
+                    <span className="spinner" />
+                    creating…
+                  </span>
+                ) : (
+                  'new_task'
+                )}
+              </button>
+              <Link className="btn btnOutlineSuccess" to="/help">
+                help
+              </Link>
+              <button className="btn btnOutline" disabled={busy !== null} onClick={() => void refresh()}>
+                refresh_log
+              </button>
+            </div>
           </div>
         </div>
 
@@ -133,16 +148,18 @@ export function DashboardPage() {
         ) : null}
       </div>
 
-      <div className="spread" style={{ marginBottom: 12, gap: 12, flexWrap: 'wrap' }}>
-        <div>
+      <div className="dashboardQueueHeader" style={{ marginBottom: 12 }}>
+        <div className="dashboardHeaderBlock">
           <div className="mono" style={{ fontSize: 16, fontWeight: 900, letterSpacing: -0.1 }}>task_queue</div>
           <div className="mono" style={{ marginTop: 4, color: '#a1a1aa', fontSize: 12, fontWeight: 800 }}>
             [high_density]
           </div>
         </div>
-        <div className="row mono xs" style={{ color: '#777', justifyContent: 'flex-end' }}>
-          <span className="badge badgeOk">● success</span>
-          <span className="badge badgeWarn">● failure</span>
+        <div className="dashboardHeaderBlock dashboardQueueBadges">
+          <div className="row mono xs" style={{ color: '#777', justifyContent: 'flex-end' }}>
+            <span className="badge badgeOk">● success</span>
+            <span className="badge badgeWarn">● failure</span>
+          </div>
         </div>
       </div>
 
