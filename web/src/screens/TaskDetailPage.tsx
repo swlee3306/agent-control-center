@@ -343,7 +343,7 @@ export function TaskDetailPage() {
               Sync pane titles
             </button>
             <Link className="btn" style={{ borderColor: '#3F3F46', color: '#a1a1aa', background: 'transparent' }} to="/">
-              Back
+              Back to Dashboard
             </Link>
           </div>
         </div>
