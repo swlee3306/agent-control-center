@@ -61,6 +61,8 @@ a{ color: inherit; text-decoration: none; }
   font-weight: 900;
 }
 
+.roleTitle{ display: inline-flex; align-items: center; gap: 6px; line-height: 1; }
+
 .container{ padding: var(--acc-pad); max-width: 1360px; margin: 0 auto; width: 100%; }
 
 .card{ background: var(--acc-panel); border-radius: var(--acc-r-lg); padding: 16px; }
