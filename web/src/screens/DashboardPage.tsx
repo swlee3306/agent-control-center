@@ -58,10 +58,15 @@ export function DashboardPage() {
     <div className="container">
       <div className="card" style={{ background: '#212121', marginBottom: 16 }}>
         <div className="spread" style={{ gap: 12, flexWrap: 'wrap' }}>
-          <div className="row" style={{ gap: 10 }}>
-            <div style={{ width: 10, height: 10, borderRadius: 999, background: '#00D4AA', flex: '0 0 auto' }} />
-            <div className="mono" style={{ fontSize: 26, fontWeight: 900, letterSpacing: -0.2 }}>
-              AGENT_CONTROL_CENTER // runtime_overview
+          <div className="row" style={{ gap: 10, alignItems: 'flex-start' }}>
+            <div style={{ width: 10, height: 10, borderRadius: 999, background: '#00D4AA', flex: '0 0 auto', marginTop: 10 }} />
+            <div>
+              <div className="mono" style={{ fontSize: 26, fontWeight: 900, letterSpacing: -0.2 }}>
+                AGENT_CONTROL_CENTER
+              </div>
+              <div className="mono" style={{ marginTop: 4, color: '#a1a1aa', fontSize: 14, fontWeight: 800 }}>
+                runtime_overview
+              </div>
             </div>
           </div>
           <div className="row" style={{ gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
@@ -128,9 +133,14 @@ export function DashboardPage() {
         ) : null}
       </div>
 
-      <div className="spread" style={{ marginBottom: 12 }}>
-        <div className="h2">// task_queue [high_density]</div>
-        <div className="row mono xs" style={{ color: '#777' }}>
+      <div className="spread" style={{ marginBottom: 12, gap: 12, flexWrap: 'wrap' }}>
+        <div>
+          <div className="mono" style={{ fontSize: 16, fontWeight: 900, letterSpacing: -0.1 }}>task_queue</div>
+          <div className="mono" style={{ marginTop: 4, color: '#a1a1aa', fontSize: 12, fontWeight: 800 }}>
+            [high_density]
+          </div>
+        </div>
+        <div className="row mono xs" style={{ color: '#777', justifyContent: 'flex-end' }}>
           <span className="badge badgeOk">● success</span>
           <span className="badge badgeWarn">● failure</span>
         </div>

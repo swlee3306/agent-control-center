@@ -214,7 +214,7 @@ function RoleLog({ role }: { role: AgentRole }) {
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="spread">
               <div className="mono" style={{ fontWeight: 900 }}>
-                {role} // log (expanded)
+                {role} - log (expanded)
               </div>
               <button className="btn btnOutlineWarn" onClick={() => setExpanded(false)}>
                 close
@@ -346,7 +346,7 @@ export function TaskDetailPage() {
         <div className="spread taskHeader" style={{ gap: 12 }}>
           <div className="row" style={{ gap: 10, flexWrap: 'wrap', minWidth: 0 }}>
             <div className="taskTitle mono" style={{ fontSize: 26, fontWeight: 900 }}>
-              TASK_DETAIL // AGENT_CONTROL_CENTER
+              TASK_DETAIL - AGENT_CONTROL_CENTER
             </div>
           </div>
           <div className="taskHeaderActions" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>

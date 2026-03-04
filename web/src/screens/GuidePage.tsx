@@ -7,7 +7,7 @@ export function GuidePage() {
       <div className="card" style={{ background: '#212121', marginBottom: 16 }}>
         <div className="spread" style={{ gap: 12, flexWrap: 'wrap' }}>
           <div className="mono" style={{ fontWeight: 900, fontSize: 22 }}>
-            AGENT_CONTROL_CENTER // 실사용 예시 가이드 (KR)
+            AGENT_CONTROL_CENTER - 실사용 예시 가이드 (KR)
           </div>
           <div className="row" style={{ flexWrap: 'wrap' }}>
             <Link className="btn btnOutline" to="/help">

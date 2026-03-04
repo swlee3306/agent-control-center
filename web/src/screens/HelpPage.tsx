@@ -6,7 +6,7 @@ export function HelpPage() {
     <div className="container" style={{ maxWidth: 1100 }}>
       <div className="card" style={{ background: '#212121', marginBottom: 16 }}>
         <div className="spread">
-          <div style={{ fontWeight: 900, fontSize: 22 }}>AGENT_CONTROL_CENTER // 사용 가이드 (KR)</div>
+          <div style={{ fontWeight: 900, fontSize: 22 }}>AGENT_CONTROL_CENTER - 사용 가이드 (KR)</div>
           <Link className="btn" style={{ borderColor: '#22c55e', color: '#22c55e', background: 'transparent' }} to="/">
             Back to Dashboard
           </Link>
