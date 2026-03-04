@@ -62,6 +62,7 @@ a{ color: inherit; text-decoration: none; }
 }
 
 .roleTitle{ display: inline-flex; align-items: center; gap: 6px; line-height: 1; }
+.roleCardHeader{ align-items: center; min-height: 34px; }
 
 .container{ padding: var(--acc-pad); max-width: 1360px; margin: 0 auto; width: 100%; }
 
