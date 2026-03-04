@@ -330,18 +330,11 @@ export function TaskDetailPage() {
       <div className="card" style={{ background: '#1E2026', borderRadius: 6, border: '1px solid #2A2B30' }}>
         <div className="spread taskHeader" style={{ gap: 12 }}>
           <div className="row" style={{ gap: 10, flexWrap: 'wrap', minWidth: 0 }}>
-            <div className="taskTitle" style={{ fontSize: 26, fontWeight: 900 }}>
+            <div className="taskTitle mono" style={{ fontSize: 26, fontWeight: 900 }}>
               TASK_DETAIL // AGENT_CONTROL_CENTER
             </div>
-            <Link
-              className="btn"
-              style={{ borderColor: '#3F3F46', color: '#a1a1aa', background: 'transparent' }}
-              to="/"
-            >
-              Back
-            </Link>
           </div>
-          <div className="taskHeaderActions">
+          <div className="taskHeaderActions" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
             <button
               className="btn"
               style={{ borderColor: '#22c55e', color: '#22c55e', background: 'transparent' }}
@@ -349,6 +342,9 @@ export function TaskDetailPage() {
             >
               Sync pane titles
             </button>
+            <Link className="btn" style={{ borderColor: '#3F3F46', color: '#a1a1aa', background: 'transparent' }} to="/">
+              Back
+            </Link>
           </div>
         </div>
         {toast ? (
