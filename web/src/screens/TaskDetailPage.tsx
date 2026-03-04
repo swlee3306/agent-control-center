@@ -395,8 +395,8 @@ export function TaskDetailPage() {
                     <div style={{ fontWeight: 900, textTransform: 'lowercase' }}>{r}</div>
                     <div className="row" style={{ gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                       <Link
-                        className="btn"
-                        style={{ borderColor: '#3F3F46', color: '#a1a1aa', background: 'transparent', padding: '6px 8px' }}
+                        className="btn btnSm"
+                        style={{ borderColor: '#3F3F46', color: '#a1a1aa', background: 'transparent' }}
                         to={`/tasks/${encodeURIComponent(taskId ?? '')}/console/${r}`}
                       >
                         console
