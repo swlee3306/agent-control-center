@@ -182,6 +182,8 @@ a{ color: inherit; text-decoration: none; }
   align-items: stretch;
 }
 .dashboardQueueBadges{ align-items: flex-end; }
+/* inside a card: make these blocks feel integrated */
+.dashboardQueueHeader .dashboardHeaderBlock{ background: rgba(0,0,0,0.18); }
 
 @media (max-width: 900px){
   .dashboardHeaderGrid{ grid-template-columns: 1fr; }

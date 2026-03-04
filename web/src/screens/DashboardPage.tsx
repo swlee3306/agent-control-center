@@ -148,22 +148,22 @@ export function DashboardPage() {
         ) : null}
       </div>
 
-      <div className="dashboardQueueHeader" style={{ marginBottom: 12 }}>
-        <div className="dashboardHeaderBlock">
-          <div className="mono" style={{ fontSize: 16, fontWeight: 900, letterSpacing: -0.1 }}>task_queue</div>
-          <div className="mono" style={{ marginTop: 4, color: '#a1a1aa', fontSize: 12, fontWeight: 800 }}>
-            [high_density]
-          </div>
-        </div>
-        <div className="dashboardHeaderBlock dashboardQueueBadges">
-          <div className="row mono xs" style={{ color: '#777', justifyContent: 'flex-end' }}>
-            <span className="badge badgeOk">● success</span>
-            <span className="badge badgeWarn">● failure</span>
-          </div>
-        </div>
-      </div>
-
       <div className="card" style={{ background: '#212121' }}>
+        <div className="dashboardQueueHeader" style={{ marginBottom: 12 }}>
+          <div className="dashboardHeaderBlock">
+            <div className="mono" style={{ fontSize: 16, fontWeight: 900, letterSpacing: -0.1 }}>task_queue</div>
+            <div className="mono" style={{ marginTop: 4, color: '#a1a1aa', fontSize: 12, fontWeight: 800 }}>
+              [high_density]
+            </div>
+          </div>
+          <div className="dashboardHeaderBlock dashboardQueueBadges">
+            <div className="row mono xs" style={{ color: '#777', justifyContent: 'flex-end' }}>
+              <span className="badge badgeOk">● success</span>
+              <span className="badge badgeWarn">● failure</span>
+            </div>
+          </div>
+        </div>
+
         <div className="tableHead mono" style={{ marginBottom: 10 }}>
           <div className="colId">task_id</div>
           <div className="colSummary">summary</div>
