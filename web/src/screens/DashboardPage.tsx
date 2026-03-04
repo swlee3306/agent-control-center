@@ -58,7 +58,7 @@ export function DashboardPage() {
     <div className="container">
       <div className="card dashboardTop" style={{ background: '#212121', marginBottom: 16 }}>
         <div className="dashboardHeaderGrid">
-          <div className="dashboardHeaderBlock">
+          <div className="dashboardHeaderBlock dashboardHeaderTitle">
             <div className="row" style={{ gap: 10, alignItems: 'flex-start' }}>
               <div
                 style={{
@@ -81,7 +81,28 @@ export function DashboardPage() {
             </div>
           </div>
 
-          <div className="dashboardHeaderBlock">
+          <div className="dashboardHeaderBlock dashboardHeaderActions">
+            <div className="row" style={{ gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              <button className="btn btnPrimary" disabled={busy !== null} onClick={() => void newTask()}>
+                {busy === 'new_task' ? (
+                  <span className="row" style={{ gap: 8 }}>
+                    <span className="spinner" />
+                    creating…
+                  </span>
+                ) : (
+                  'new_task'
+                )}
+              </button>
+              <Link className="btn btnOutlineSuccess" to="/help">
+                help
+              </Link>
+              <button className="btn btnOutline" disabled={busy !== null} onClick={() => void refresh()}>
+                refresh_log
+              </button>
+            </div>
+          </div>
+
+          <div className="dashboardHeaderBlock dashboardHeaderOneLine">
             <div className="mono" style={{ color: '#a1a1aa', fontSize: 12, marginBottom: 6 }}>
               Run one-line (프로젝트 생성/개발/배포를 자연어로 요청)
             </div>
@@ -115,27 +136,6 @@ export function DashboardPage() {
                 ) : (
                   'run'
                 )}
-              </button>
-            </div>
-          </div>
-
-          <div className="dashboardHeaderBlock dashboardHeaderActions">
-            <div className="row" style={{ gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-              <button className="btn btnPrimary" disabled={busy !== null} onClick={() => void newTask()}>
-                {busy === 'new_task' ? (
-                  <span className="row" style={{ gap: 8 }}>
-                    <span className="spinner" />
-                    creating…
-                  </span>
-                ) : (
-                  'new_task'
-                )}
-              </button>
-              <Link className="btn btnOutlineSuccess" to="/help">
-                help
-              </Link>
-              <button className="btn btnOutline" disabled={busy !== null} onClick={() => void refresh()}>
-                refresh_log
               </button>
             </div>
           </div>
