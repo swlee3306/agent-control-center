@@ -156,7 +156,7 @@ export function AgentConsolePage() {
         <div className="spread" style={{ gap: 12, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
             <div className="h1">AGENT CONSOLE</div>
-            <div className="mono xs muted">// ROLE_PRIMARY_AGENT : {profile.label}</div>
+            <div className="mono xs muted">ROLE_PRIMARY_AGENT - {profile.label}</div>
           </div>
 
           <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
