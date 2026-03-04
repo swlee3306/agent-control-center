@@ -4,6 +4,7 @@ import http from 'node:http';
 import path from 'node:path';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
+import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { listTasks, getTaskDetail, pushTimeline, createTask, setTaskState, deleteTask } from './store.js';
 import {
@@ -78,6 +79,102 @@ app.post('/api/tasks', (req, res) => {
   } catch (e) {
     res.status(400).json({ error: (e as Error).message });
   }
+});
+
+function slugify(input: string) {
+  const s = input
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+    .slice(0, 40);
+  return s || '';
+}
+
+function extractAbsPath(text: string) {
+  // First absolute-ish path occurrence.
+  // Example: /home/user/projects/app, /tmp/foo
+  const m = text.match(/\/[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)*/);
+  return m?.[0];
+}
+
+type RunMode = 'manual' | 'auto';
+
+app.post('/api/projects/run', async (req, res) => {
+  const body = req.body as Partial<{ text: string; mode: RunMode }>;
+  const intent = String(body.text ?? '').trim();
+  const mode: RunMode = body.mode === 'auto' ? 'auto' : 'manual';
+  if (!intent) return res.status(400).json({ error: 'missing text' });
+
+  const username = os.userInfo().username || 'user';
+  const baseDir = path.join('/home', username, 'projects');
+  const extracted = extractAbsPath(intent);
+
+  // Heuristic name: first token-ish word, else timestamp.
+  const firstWord = (intent.match(/[A-Za-z0-9][A-Za-z0-9_-]{1,40}/)?.[0] ?? '').trim();
+  const projectName = slugify(firstWord) || `project-${new Date().toISOString().slice(0, 10)}`;
+
+  const rootDir = extracted ? extracted : path.join(baseDir, projectName);
+
+  try {
+    fs.mkdirSync(rootDir, { recursive: true });
+  } catch (e) {
+    return res.status(400).json({ error: `failed to create dir: ${(e as Error).message}` });
+  }
+
+  const task = createTask({ summary: `project_build: ${projectName} — ${intent}`, agent: 'codex-pool' });
+  setTaskState(task.id, {
+    meta: {
+      type: 'project_build',
+      intent,
+      rootDir,
+      mode,
+      defaults: { baseDir, namespace: 'personal', deploy: 'k8s-subpath' },
+    },
+  });
+
+  pushTimeline(task.id, `project> kickoff (${mode})`, 'ok');
+  pushTimeline(task.id, `project> rootDir=${rootDir}`, 'neutral');
+
+  // Kick off an architect prompt in tmux.
+  const targetPane = await resolveRolePaneIndex('architect');
+  const kickoff = [
+    'You are ARCHITECT for a new PROJECT BUILD task.',
+    '',
+    `User intent: ${intent}`,
+    `Working directory (must exist): ${rootDir}`,
+    '',
+    'Defaults (if user did not specify):',
+    '- Base dir: /home/<username>/projects (create if missing)',
+    '- Deploy: k8s (namespace=personal) + subpath ingress',
+    '- Safe mode: manual approvals by default (auto is allowed if explicitly chosen)',
+    '',
+    'Your job:',
+    '1) Ask clarifying questions ONLY if needed (stack: web/framework, backend language, DB, auth, deploy style).',
+    '2) Propose a plan (TL;DR + tasks <= 10 + DoD).',
+    '3) Hand off to EXECUTOR with concrete next steps, file paths, and commands.',
+    '',
+    'Rules:',
+    '- Keep changes minimal and reversible.',
+    '- If requirements are ambiguous, ask before implementing.',
+    '- Always include the chosen stack/deploy decisions in your plan.',
+  ].join('\n');
+
+  try {
+    setTaskState(task.id, { stage: 'Plan', status: 'running' });
+    const current = await tmuxPaneCurrentCommand(tmuxTarget, targetPane).catch(() => '');
+    const isCodex = current === 'codex' || current === 'node';
+    if (isCodex) {
+      await tmuxSend(tmuxTarget, targetPane, kickoff);
+    } else {
+      const cmd = `codex --yolo ${bashDollarString(kickoff)}`;
+      await tmuxSend(tmuxTarget, targetPane, cmd);
+    }
+    pushTimeline(task.id, `project> architect_kickoff (${isCodex ? 'prompt' : 'spawn codex'})`, 'ok');
+  } catch (e) {
+    pushTimeline(task.id, `project_kickoff_failed: ${(e as Error).message}`, 'warn');
+  }
+
+  res.json({ ok: true, taskId: task.id, rootDir, mode });
 });
 
 app.delete('/api/tasks/:id', (req, res) => {
