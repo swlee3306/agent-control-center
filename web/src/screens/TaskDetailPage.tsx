@@ -422,7 +422,9 @@ export function TaskDetailPage() {
                   <div className="mono" style={{ color: '#71717A', fontSize: 11, marginTop: 4 }}>
                     ANIMAL: {normalizeAnimalLabel(detail.agents[r].animal, r)}
                   </div>
-                  <div style={{ marginTop: 8, fontSize: 13, lineHeight: 1.35 }}>{detail.agents[r].line}</div>
+                  <div className="roleLine" style={{ marginTop: 8, fontSize: 13, lineHeight: 1.35 }}>
+                    {detail.agents[r].line}
+                  </div>
 
                   {/* live tmux log */}
                   <RoleLog role={r} />
