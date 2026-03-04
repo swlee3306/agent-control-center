@@ -10,6 +10,21 @@ import {
 
 const roles: AgentRole[] = ['architect', 'executor', 'qa', 'reviewer'];
 
+const roleEmoji: Record<AgentRole, string> = {
+  architect: '🦉',
+  executor: '🦊',
+  qa: '🦦',
+  reviewer: '🦅',
+};
+
+function normalizeAnimalLabel(animal: string | undefined, role?: AgentRole) {
+  const a = String(animal ?? '').toUpperCase();
+  // UI convention update: executor is FOX (not WOLF)
+  if (role === 'executor' && (a === 'WOLF' || a === '')) return 'FOX';
+  if (a === 'WOLF') return 'FOX';
+  return a || '-';
+}
+
 function statusBadge(status: Status) {
   if (status === 'running' || status === 'done') return 'badge badgeOk';
   if (status === 'idle') return 'badge badgeNeutral';
@@ -388,7 +403,9 @@ export function TaskDetailPage() {
                   style={{ background: '#1E2026', borderRadius: 6, border: '1px solid #2A2B30', padding: 12 }}
                 >
                   <div className="spread">
-                    <div style={{ fontWeight: 900, textTransform: 'lowercase' }}>{r}</div>
+                    <div style={{ fontWeight: 900, textTransform: 'lowercase' }}>
+                      {r} <span style={{ opacity: 0.9 }}>{roleEmoji[r]}</span>
+                    </div>
                     <div className="row" style={{ gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                       <Link
                         className="btn btnSm"
@@ -401,7 +418,7 @@ export function TaskDetailPage() {
                     </div>
                   </div>
                   <div className="mono" style={{ color: '#71717A', fontSize: 11, marginTop: 4 }}>
-                    ANIMAL: {detail.agents[r].animal}
+                    ANIMAL: {normalizeAnimalLabel(detail.agents[r].animal, r)}
                   </div>
                   <div style={{ marginTop: 8, fontSize: 13, lineHeight: 1.35 }}>{detail.agents[r].line}</div>
 
