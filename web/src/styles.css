@@ -64,6 +64,16 @@ a{ color: inherit; text-decoration: none; }
 .roleTitle{ display: inline-flex; align-items: center; gap: 6px; line-height: 1; }
 .roleCardHeader{ align-items: center; min-height: 34px; }
 
+/* Normalize role description height so card layouts align even when text wraps */
+.roleLine{
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  /* 2 lines of 1.35 * 13px = 35.1px */
+  min-height: 36px;
+}
+
 .container{ padding: var(--acc-pad); max-width: 1360px; margin: 0 auto; width: 100%; }
 
 .card{ background: var(--acc-panel); border-radius: var(--acc-r-lg); padding: 16px; }
