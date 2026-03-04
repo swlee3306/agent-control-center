@@ -400,9 +400,10 @@ export function TaskDetailPage() {
               {roles.map((r) => (
                 <div
                   key={r}
+                  className="roleCard"
                   style={{ background: '#1E2026', borderRadius: 6, border: '1px solid #2A2B30', padding: 12 }}
                 >
-                  <div className="spread">
+                  <div className="spread roleCardHeader">
                     <div className="roleTitle" style={{ fontWeight: 900, textTransform: 'lowercase' }}>
                       <span>{r}</span>
                       <span style={{ opacity: 0.9 }}>{roleEmoji[r]}</span>
