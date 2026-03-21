@@ -1,5 +1,13 @@
 # agent-control-center (ACC)
 
+## 한 줄 소개
+여러 에이전트를 한 흐름으로 제어하는 자동 실행 시스템입니다.
+
+## 저장소 성격
+- 분류: 백엔드 / 플랫폼 도구
+- 목적: Plan → Exec → Verify → Review 흐름 자동화
+- 핵심 기술: TypeScript, Web UI, tmux, Kubernetes
+
 ACC is a **one-line intent → multi-agent Plan→Exec→Verify→Review** autopilot system.
 
 It provides a web UI + server to orchestrate a 4-role agent pipeline via tmux (codex-pool):
