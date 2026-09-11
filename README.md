@@ -8,7 +8,7 @@
 - 목적: Plan → Exec → Verify → Review 흐름 자동화
 - 핵심 기술: TypeScript, Web UI, tmux, Kubernetes
 
-ACC is a **one-line intent → multi-agent Plan→Exec→Verify→Review** autopilot system.
+ACC is an experimental local **intent → Plan → Exec → Verify → Review** orchestrator. It requires a configured tmux agent environment; a successful frontend build does not verify real agent execution or production reliability.
 
 It provides a web UI + server to orchestrate a 4-role agent pipeline via tmux (codex-pool):
 - roles: **architect / executor / qa / reviewer**
