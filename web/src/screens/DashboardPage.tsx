@@ -111,7 +111,7 @@ export function DashboardPage() {
                 className="input mono"
                 value={oneLine}
                 onChange={(e) => setOneLine(e.target.value)}
-                placeholder='예) "/home/sulee/projects/calendar-app 에서 일정관리 웹 만들어서 k8s personal /calendar/ 로 배포해줘"'
+                placeholder='예) "/path/to/projects/calendar-app 에서 일정관리 웹 만들어서 k8s personal /calendar/ 로 배포해줘"'
                 style={{ flex: 1, minWidth: 280 }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') void runOneLine();
